@@ -4,7 +4,7 @@
 
 Cell segmentation is peformed in 2D and 3D throught cellpose 4.0+(published work) : https://github.com/MouseLand/cellpose; compatible with your own cellpose models.
 
-Spot detection is performed via *big-fish* a python implementation of FishQuant (published work) : https://github.com/fish-quant/big-fish, the python implementation of **Fish-quant**.
+Spot detection is performed via *big-fish* a python implementation of FishQuant (published work) : https://github.com/fish-quant/big-fish.
 
 ***The workflow is fully explained in the [wiki](https://github.com/2Echoes/small_fish_gui/wiki) ! Make sure to check it out.***
 
