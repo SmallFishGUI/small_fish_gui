@@ -116,7 +116,7 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
 
     if user_parameters['spots_extraction_folder'] != '' and type(user_parameters['spots_extraction_folder']) != type(None) :
         if user_parameters['spots_filename'] != '' and type(user_parameters['spots_filename']) != type(None) :
-            if any((user_parameters['do_spots_excel'], user_parameters['do_spots_csv'], user_parameters['do_spots_feather'])) :
+            if any(user_parameters['do_spots_excel'], user_parameters['do_spots_csv']) :
                 launch_spots_extraction(
                     acquisition_id=acquisition_id,
                     user_parameters=user_parameters,
@@ -155,7 +155,7 @@ def save_segmentation(nucleus_label : np.ndarray, cytoplasm_label: np.ndarray) :
 
             path = answer['folder'] + '/' + answer['filename']
             print(answer['ext'])
-            is_npy, is_npz, is_npz_compressed = answer['ext'], answer['ext0'], answer['ext1']
+            is_npy, is_npz, is_npz_compressed = answer['ext'], answer['ext1'], answer['ext2']
 
             if is_npy + is_npz + is_npz_compressed == 1 : 
                 if is_npy : 
