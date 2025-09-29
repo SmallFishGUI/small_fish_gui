@@ -2,9 +2,10 @@
 Submodule keeping necessary calls from main pipeline for batch processing.
 """
 
-import os
+import os, traceback
 import pandas as pd
 import FreeSimpleGUI as sg
+import numpy as np
 
 from ..hints import pipeline_parameters
 
@@ -18,6 +19,7 @@ from ..pipeline import get_nucleus_signal
 from ..pipeline import _cast_segmentation_parameters, convert_parameters_types
 from ..pipeline import plot_segmentation, output_spot_tiffvisual
 from ..utils import get_datetime
+from .utils import clean_filename
 
 def window_print(window: sg.Window, *args) :
     print(*args)
@@ -63,7 +65,6 @@ def batch_pipeline(
     filenames_list.sort()
     
 
-    error_log = open(main_dir + "error_log", mode='w')
     error_count = 0
 
     #These columns usually kept for coloc analysis will be dropped for memory gain in batch mode
@@ -105,6 +106,9 @@ def batch_pipeline(
                     nucleus_model_name= parameters['nucleus_model_name'],
                     nucleus_diameter= parameters['nucleus_diameter'],
                     channels=[parameters['cytoplasm_channel'], parameters['nucleus_channel']],
+                    anisotropy= parameters['anisotropy'],
+                    nucleus_3D_segmentation=parameters['nucleus_segmentation_3D'],
+                    cyto_3D_segmentation= parameters['cytoplasm_segmentation_3D'],
                     do_only_nuc=parameters['segment_only_nuclei'],
                     flow_threshold_cyto=parameters['flow_threshold_cyto'],
                     flow_threshold_nuc=parameters['flow_threshold_cyto'],
@@ -126,14 +130,14 @@ def batch_pipeline(
                             cyto_label= cytoplasm_label,
                             nuc_image= im_seg[parameters['nucleus_channel']],
                             nuc_label=nucleus_label,
-                            path= main_dir + "segmentation/" + file,
+                            path= main_dir + "segmentation/" + clean_filename(file),
                             do_only_nuc= parameters['segment_only_nuclei'],
                         )
 
                     if parameters["save_masks"] :
                         output_masks(
                             batch_path= main_dir,
-                            acquisition_name= file,
+                            acquisition_name= clean_filename(file),
                             nucleus_label= nucleus_label,
                             cytoplasm_label= cytoplasm_label if not parameters['segment_only_nuclei'] else None,
                         )
@@ -174,7 +178,7 @@ def batch_pipeline(
                     image,
                     spots_list= spots_list,
                     dot_size=2,
-                    path_output= main_dir + "detection/" + file + "_spot_detection.tiff"
+                    path_output= main_dir + "detection/" + clean_filename(file) + "_spot_detection.tiff"
                 )
 
             #4. Spots extraction
@@ -185,8 +189,7 @@ def batch_pipeline(
                 #Only spots have one file per image to avoir memory overload
                 parameters['do_spots_excel'] = parameters['xlsx']
                 parameters['do_spots_csv'] = parameters['csv']
-                parameters['do_spots_feather'] = parameters['feather']
-                parameters['spots_filename'] = "spots_extractions_{0}".format(file)
+                parameters['spots_filename'] = "spots_extractions_{0}".format(clean_filename(file))
                 parameters['spots_extraction_folder'] = main_dir + "results/spots_extraction/"
 
                 launch_spots_extraction(
@@ -208,8 +211,8 @@ def batch_pipeline(
             spots=spots,
             clusters=clusters,
             spots_cluster_id=spot_cluster_id,
-            nucleus_label = nucleus_label,
-            cell_label= cytoplasm_label,
+            nucleus_label = nucleus_label if nucleus_label.ndim == 2 else np.max(nucleus_label,axis=0),
+            cell_label= cytoplasm_label if cytoplasm_label.ndim == 2 else np.max(cytoplasm_label, axis=0),
             user_parameters=parameters,
             frame_results=frame_result,
             )
@@ -239,7 +242,6 @@ def batch_pipeline(
                 path= main_dir + "results/", 
                 filename=batch_name, 
                 do_excel= parameters["xlsx"], 
-                do_feather= parameters["feather"], 
                 do_csv= parameters["csv"],
                 overwrite=True,
                 batch_mode=True,
@@ -255,7 +257,6 @@ def batch_pipeline(
                     path= main_dir + "results/", 
                     filename=batch_name + '_cell_result', 
                     do_excel= parameters["xlsx"], 
-                    do_feather= parameters["feather"], 
                     do_csv= parameters["csv"],
                     overwrite=True,
                     batch_mode=True,
@@ -270,15 +271,20 @@ def batch_pipeline(
 
         except Exception as error :
             
-            error_count +=1
-            print("Exception raised for acquisition, writting error in error log.")
+            
+            with open(main_dir + "error_log", mode='a') as error_log :
+            
+                error_count +=1
+                print("Exception raised for acquisition, writting error in error log.")
 
-            log = [
-                f"Error raised during acquisition {acquisition_id}.\n"
-            ]
-            log.append(str(error) + '\n')
+                log = [
+                    f"Error raised during acquisition {acquisition_id}.\n",
+                    f"{error}\n",
+                    f"traceback :\n{traceback.format_exc()}"
+                ]
+                
 
-            error_log.writelines(log)
+                error_log.writelines(log)
 
             print("Ignoring current acquisition and proceeding to next one.")
             continue

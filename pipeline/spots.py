@@ -31,7 +31,6 @@ def launch_spots_extraction(
         filename= user_parameters['spots_filename'],
         do_excel=user_parameters['do_spots_excel'],
         do_csv=user_parameters['do_spots_csv'],
-        do_feather=user_parameters['do_spots_feather'],
         )
     
     if did_output : print("Individual spots extracted at {0}".format(user_parameters['spots_extraction_folder']))
@@ -41,8 +40,8 @@ def compute_Spots(
         image : np.ndarray,
         spots : np.ndarray,
         cluster_id : np.ndarray,
-        nucleus_label = None,
-        cell_label = None,
+        nucleus_label : np.ndarray = None,
+        cell_label : np.ndarray = None,
 ) :
 
     if len(spots) == 0 :
@@ -62,7 +61,10 @@ def compute_Spots(
     else :
         in_nuc_list = np.NaN
     if type(cell_label) != type(None) :
-        cell_label_list = list(cell_label[index[-2:]]) #Only plane coordinates
+        if cell_label.ndim == 3 :
+            cell_label_list = list(cell_label[index])
+        else :    
+            cell_label_list = list(cell_label[index[-2:]]) #Only plane coordinates
     else :
         cell_label_list = np.NaN
     id_list = np.arange(len(spots))

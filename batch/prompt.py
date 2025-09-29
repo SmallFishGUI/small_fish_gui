@@ -4,6 +4,7 @@ Submodule with main function to call to launch batch mode.
 
 import os
 import FreeSimpleGUI as sg
+import small_fish_gui.default_values as default
 
 from .utils import get_elmt_from_key, create_map, call_auto_map
 from .pipeline import batch_pipeline
@@ -45,11 +46,11 @@ def batch_promp(
     #Input tab
     input_layout = _input_parameters_layout(
         ask_for_segmentation=True,
-        is_3D_stack_preset= preset.setdefault("is_3D_stack" ,False),
+        is_3D_stack_preset= preset.setdefault("is_3D_stack" ,default.IS_3D_STACK),
         time_stack_preset=False,
-        multichannel_preset=preset.setdefault("is_multichannel" ,False),
-        do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution" ,False),
-        do_clustering_preset= preset.setdefault("do_cluster_computation", False),
+        multichannel_preset=preset.setdefault("is_multichannel" ,default.IS_MULTICHANNEL),
+        do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution", default.DO_DENSE_REGIONS_DECONVOLUTION),
+        do_clustering_preset= preset.setdefault("do_cluster_computation", default.DO_CLUSTER_COMPUTATION),
         do_Napari_correction=False,
         do_segmentation_preset= preset.setdefault("segmentation_done", False),
     )
@@ -76,18 +77,18 @@ def batch_promp(
     segmentation_layout = _segmentation_layout(
         multichannel=True,
         is_3D_stack=True, 
-        cytoplasm_model_preset=preset.setdefault("cyto_model_name",'cyto3'),
-        cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",0),
-        cyto_diameter_preset=preset.setdefault("cytoplasm_diameter",180),
-        nucleus_model_preset=preset.setdefault("nucleus_model_name",'nuclei'),
-        nucleus_channel_preset=preset.setdefault("nucleus channel",0),
-        nucleus_diameter_preset=preset.setdefault("nucleus_diameter",150),
-        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",False),
+        cytoplasm_model_preset=preset.setdefault("cyto_model_name",default.CYTO_MODEL),
+        cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",default.CHANNEL),
+        cyto_diameter_preset=preset.setdefault("cytoplasm_diameter",default.CYTO_DIAMETER),
+        nucleus_model_preset=preset.setdefault("nucleus_model_name",default.NUC_MODEL),
+        nucleus_channel_preset=preset.setdefault("nucleus channel",default.CHANNEL),
+        nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.NUC_DIAMETER),
+        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.SEGMENT_ONLY_NUCLEI),
         )
     
     apply_segmentation_button = sg.Button('apply', key='apply-segmentation')
     segmentation_layout += [[apply_segmentation_button]]
-    seg_keys_to_hide = ['show_segmentation', 'saving path', 'filename', 'other_nucleus_image']
+    seg_keys_to_hide = ['show_segmentation', 'saving path', 'filename', 'other_nucleus_image', 'save_segmentation_visual', 'saving path_browse']
     segmentation_tab = sg.Tab("Segmentation", segmentation_layout, visible=False)
 
     #Detection tab
@@ -101,7 +102,7 @@ def batch_promp(
     )
     apply_detection_button = sg.Button('apply', key='apply-detection')
     detection_layout += [[apply_detection_button]]
-    detection_keys_to_hide = ['do_spots_csv', 'do_spots_excel', 'spots_filename','spots_extraction_folder']
+    detection_keys_to_hide = ['do_spots_csv', 'do_spots_excel', 'spots_filename','spots_extraction_folder', 'spots_extraction_folder_browse']
     detection_tab = sg.Tab("Detection", detection_layout, visible=False)
 
     #Output tab
@@ -121,10 +122,10 @@ def batch_promp(
         [extract_spots_box],
         [sg.Text("Data extension", font=('bold',15), pad=(0,10))],
         [sg.Checkbox(".csv", key='csv'),sg.Checkbox(".xlsx", key='xlsx')],
-        [apply_output_button],
         [sg.Text("Segmentation", font=('bold',15), pad=(0,10))],
         [save_segmentation_visual_box],
         [save_segmentation_masks_box],
+        [apply_output_button],
     ]
 
     output_tab = sg.Tab("Output", output_layout, visible=True)

@@ -9,10 +9,12 @@ class pipeline_parameters(TypedDict) :
             At run time is a regular dict instance, this class is used for keys hinting
             """
             alpha : float
+            anisotropy : float
             beta : float
             channel_to_compute : int
             cellprob_threshold_cyto : float
             cellprob_threshold_nuc : float
+            cytoplasm_segmentation_3D : bool
             cluster_size : int
             cyto_model_name : str
             cytoplasm_diameter : int
@@ -41,6 +43,7 @@ class pipeline_parameters(TypedDict) :
             is_3D_stack : bool
             is_multichannel : bool
             nucleus_channel_signal : int
+            nucleus_segmentation_3D : bool
             nucleus_diameter : int
             nucleus_model_name : str
             nucleus_channel : int

@@ -64,3 +64,5 @@ def create_map(
     
     return maping
 
+def clean_filename(filename : str) :
+    return "_".join(filename.split('.')[:-1])

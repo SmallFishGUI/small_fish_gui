@@ -574,6 +574,15 @@ def plot_segmentation(
     if nuc_image.ndim == 3 :
         nuc_image = np.max(nuc_image,axis=0)
     
+    if cyto_label.ndim == 3 :
+        cyto_label = np.max(cyto_label,axis=0)
+    
+    if nuc_label.ndim == 3 :
+        nuc_label = np.max(nuc_label,axis=0)
+    
+    if cyto_image.ndim == 3 :
+        cyto_image = np.max(cyto_image,axis=0)
+    
     plot.plot_segmentation_boundary(
         image=nuc_image,
         nuc_label= nuc_label,

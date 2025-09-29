@@ -119,7 +119,7 @@ def path_layout(keys= [],look_for_dir = False, header=None, preset=os.getcwd()) 
     for name in keys :
         layout += [
             [sg.Text(pad_right(name, max_length, ' '))], 
-            [sg.InputText(key= name, expand_x=True, default_text=preset), Browse(key= name, initial_folder= preset), sg.Text('')],
+            [sg.InputText(key= name, expand_x=True, default_text=preset), Browse(key= name + "_browse", initial_folder= preset), sg.Text('')],
             ]
     if isinstance(header, str) :
         layout = [add_header(header)] + layout
