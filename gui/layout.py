@@ -379,6 +379,17 @@ def colocalization_layout(spot_list : list) :
 
     return layout
 
+def chromatic_aberration_layout(
+        config_list: list = [],
+        ) :
+
+    layout = [
+        [sg.Text("Chromatic Aberration Correction", size=30, font="bold")],
+        [sg.DropDown(values=[""] + config_list, key="chromatic_config"), sg.Button("Open calibration tool")],
+    ]
+
+    return layout
+
 def _ask_channel_map_layout(
         shape,
         is_3D_stack,
