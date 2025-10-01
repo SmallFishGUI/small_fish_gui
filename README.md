@@ -20,22 +20,22 @@ Spot detection is performed via *big-fish* a python implementation of FishQuant 
 - Multichannel colocalisation
 
 <p align="center">
-<img src="https://github.com/2Echoes/small_fish_gui/blob/segmentation_3D/illustrations/Segmentation2D.png" width="500" title="Fish_signal" alt="Fish signal">
+<img src="https://github.com/SmallFishGUI/small_fish_gui/tree/main/illustrations/Segmentation2D.png" width="500" title="Fish_signal" alt="Fish signal">
 </p>
 <p align="center"><strong>Raw 3D fish signal with dapi</p></strong>  
 
 <p align="center">
-<img src="https://github.com/2Echoes/small_fish_gui/blob/segmentation_3D/illustrations/Segmentation2D_with_labels.png" width="500" title="Cell segmentation" alt="Segmentation"> 
+<img src="https://github.com/SmallFishGUI/small_fish_gui/tree/main/illustrations/Segmentation2D_with_labels.png" width="500" title="Cell segmentation" alt="Segmentation"> 
 </p>
 <p align="center"><strong>2D segmentation</p></strong>  
 
 <p align="center">
-<img src="https://github.com/2Echoes/small_fish_gui/blob/segmentation_3D/illustrations/FocciVitrine.png" width="500" title="Detection_signal" alt="Detection_signal">
+<img src="https://github.com/SmallFishGUI/small_fish_gui/tree/main/illustrations/FocciVitrine.png" width="500" title="Detection_signal" alt="Detection_signal">
 </p>
 <p align="center"><strong> 3D Spot detection</p></strong>  
 
 <p align="center">
-<img src="https://github.com/2Echoes/small_fish_gui/blob/segmentation_3D/illustrations/FocciVitrine_no_spots.png" width="500" title="Detection filter" alt="detection">
+<img src="https://github.com/SmallFishGUI/small_fish_gui/tree/main/illustrations/FocciVitrine_no_spots.png" width="500" title="Detection filter" alt="detection">
 </p>
 <p align="center"><strong>Cluster detection</p></strong>  
 
