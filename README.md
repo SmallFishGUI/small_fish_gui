@@ -1,5 +1,7 @@
 # Small Fish - A User-Friendly Graphical Interface for smFISH Image Quantification
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![GitHub stars](https://img.shields.io/github/stars/SmallFishGUI/small_fish_gui.svg?style=social)](https://github.com/SmallFishGUI/small_fish_gui) [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+
 **Small Fish** is a python application for smFish image analysis. It provides a ready to use graphical interface to synthetize state-of-the-art scientific packages into an automated workflow. Small Fish is designed to simplify images quantification and analysis for people without coding skills. 
 
 Cell segmentation is peformed in 2D and 3D throught cellpose 4.0+(published work) : https://github.com/MouseLand/cellpose; compatible with your own cellpose models.
@@ -10,14 +12,14 @@ Spot detection is performed via *big-fish* a python implementation of FishQuant 
 
 ## What can you do with small fish ?
 
-- Single molecule quantification
-- Transcriptomics
-- Foci quantification
-- Transcription sites quantification
-- Nuclear signal quantification
-- Signal to noise analysis
-- Cell segmentation
-- Multichannel colocalisation
+✅ Single molecule quantification  
+✅ Transcriptomics  
+✅ Foci quantification  
+✅ Transcription sites quantification  
+✅ Nuclear signal quantification  
+✅ Signal to noise analysis  
+✅ Cell segmentation  
+✅ Multichannel colocalisation  
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/SmallFishGUI/small_fish_gui/main/illustrations/Segmentation2D.png" width="500" title="Fish_signal" alt="Fish signal">
@@ -72,10 +74,3 @@ python -m small_fish_gui
 ```
 
 You are all set! Try it yourself or check the [get started](https://github.com/2Echoes/small_fish_gui/wiki/Get-started) section in the wiki.
-
-## Developpement
-
-Optional features to include in future versions : 
-
-**Major Dev**
-* 3D segmentation (coming soon with cellpose 4.x)
