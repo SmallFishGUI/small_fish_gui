@@ -208,9 +208,10 @@ def show_segmentation(
     label_reseter = SegmentationReseter(labels_layer_list)
     changes_applier = ChangesPropagater(labels_layer_list)
 
-    buttons_container = widgets.Container(widgets=[label_picker.widget, changes_applier.widget, label_reseter.widget], labels=False, layout='horizontal')
+    buttons_container = widgets.Container(widgets=[label_picker.widget, label_reseter.widget], labels=False, layout='horizontal')
+    changes_applier = widgets.Container(widgets=[changes_applier.widget], labels=False, layout='horizontal')
     tools_container = widgets.Container(
-        widgets = [buttons_container, label_eraser.widget],
+        widgets = [buttons_container, changes_applier, label_eraser.widget],
         labels=False,
     )
     Viewer.window.add_dock_widget(tools_container, name='SmallFish', area='left')

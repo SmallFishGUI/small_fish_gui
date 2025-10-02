@@ -96,14 +96,15 @@ def output_image_prompt(filename) :
         layout = path_layout(['folder'], look_for_dir= True, header= "Output parameters :")
         layout += parameters_layout(["filename"], default_values= [filename + "_quantification"], size=25)
         layout += bool_layout(['csv','Excel', 'Feather'])
-        layout.append([sg.Button('Cancel')])
 
         event,values= prompt(layout)
+        if event == ('Cancel') : return None
 
         values['filename'] = values['filename'].replace(".xlsx","")
         values['filename'] = values['filename'].replace(".feather","")
         excel_filename = values['filename'] + ".xlsx"
         feather_filename = values['filename'] + ".feather"
+
 
         if not values['Excel'] and not values['Feather'] and not values['csv'] :
             sg.popup("Please check at least one box : Excel/Feather/csv")
@@ -124,9 +125,7 @@ def output_image_prompt(filename) :
 
         if not relaunch : break
 
-    if event == ('Cancel') : return None
-
-    else : return values
+    return values
 
 def detection_parameters_promt(
         is_3D_stack, 

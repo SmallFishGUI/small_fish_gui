@@ -25,7 +25,17 @@ def batch_promp(
 
 
     #LOAD FILES
-    files_table = sg.Table(values=files_values, headings=['Filenames'], col_widths=100, max_col_width= 200, def_col_width=100, num_rows= 10, auto_size_columns=False)
+    files_table = sg.Table(
+        values=files_values,
+        headings=['Filenames'],
+        col_widths=100,
+        max_col_width= 200,
+        def_col_width=100,
+        num_rows= 10,
+        auto_size_columns=False, 
+        expand_y=True,
+        justification='left',
+        )
 
     #DIMENSION SANITY
     sanity_progress = sg.ProgressBar(10, size_px=(500,10), border_width=2)

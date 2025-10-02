@@ -158,20 +158,31 @@ class ChangesPropagater(NapariWidget) :
     """
     def __init__(self, label_list):
         self.label_list = label_list
+        for label_layer in self.label_list :
+            label_layer.events.selected_label.connect((self, 'update'))
         super().__init__()
 
     def _create_widget(self) :
         @magicgui(
-            call_button='Apply changes',
+            call_button='Expand label',
             auto_call=False,
         )
-        def apply_changes() -> None:
+        def apply_changes(label_number : int) -> None:
             for layer in self.label_list :
                 slices = layer.data.shape[0]
-                layer_2D = np.max(layer.data, axis=0)
-                layer.data = np.repeat(layer_2D[np.newaxis], slices, axis=0)
+                masked_layer = layer.data.copy()
+                masked_layer[masked_layer != label_number] = 0
+                masked_layer = np.max(masked_layer, axis=0)
+                expanded_layer = np.repeat(masked_layer[np.newaxis], slices, axis=0)
+                layer.data[expanded_layer == label_number] = expanded_layer[expanded_layer == label_number]
                 layer.refresh()
         return apply_changes
+
+    def update(self, event) :
+        layer : Labels = event.source
+        new_label = layer.selected_label
+        self.widget.label_number.value = new_label
+        self.widget.update()
 
 class ClusterIDSetter(ClusterWidget) :
     """

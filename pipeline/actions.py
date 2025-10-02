@@ -116,7 +116,7 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
 
     if user_parameters['spots_extraction_folder'] != '' and type(user_parameters['spots_extraction_folder']) != type(None) :
         if user_parameters['spots_filename'] != '' and type(user_parameters['spots_filename']) != type(None) :
-            if any(user_parameters['do_spots_excel'], user_parameters['do_spots_csv']) :
+            if any([user_parameters['do_spots_excel'], user_parameters['do_spots_csv']]) :
                 launch_spots_extraction(
                     acquisition_id=acquisition_id,
                     user_parameters=user_parameters,
@@ -154,8 +154,7 @@ def save_segmentation(nucleus_label : np.ndarray, cytoplasm_label: np.ndarray) :
                 return False #User clicks cancel
 
             path = answer['folder'] + '/' + answer['filename']
-            print(answer['ext'])
-            is_npy, is_npz, is_npz_compressed = answer['ext'], answer['ext1'], answer['ext2']
+            is_npy, is_npz, is_npz_compressed = answer['ext'], answer['ext0'], answer['ext1']
 
             if is_npy + is_npz + is_npz_compressed == 1 : 
                 if is_npy : 
@@ -247,6 +246,8 @@ def save_results(
     if len(result_df) != 0  :
         dic = output_image_prompt(filename=result_df.iloc[0].at['filename'])
 
+        if dic is None : return None
+
         if isinstance(dic, dict) :
             path = dic['folder']
             filename = dic['filename']
@@ -264,6 +265,7 @@ def save_results(
 
     elif len(global_coloc_df) !=0 or len(cell_coloc_df) !=0 :
         dic = output_image_prompt(filename="loaded_spots_coloc")
+        if dic is None : return None
         if isinstance(dic, dict) :
             path = dic['folder']
             filename = dic['filename']
