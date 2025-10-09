@@ -45,6 +45,9 @@ Spot detection is performed via *big-fish* a python implementation of FishQuant 
 Analysis can be performed either fully interactively throught a Napari interface or performed automatically through a batch processing allowing for reproducible quantifications. 
 
 ## Installation
+
+### General setup
+
 If you don't have a python installation yet I would recommend the [miniconda distribution](https://docs.anaconda.com/free/miniconda/miniconda-other-installer-links/).
 
 It is higly recommanded to create a specific [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [virtual](https://docs.python.org/3.6/library/venv.html) environnement to install small fish.
@@ -57,13 +60,31 @@ Then download the small_fish package :
 ```bash
 pip install small_fish_gui
 ```
-<b> (Recommended) </b> Results visualisation is achieved through *Napari* which you can install with :
+Results visualisation is achieved through *Napari* which you can install with :
 
 ```bash
 pip install napari[all]
 ```
 
-## Run Small fish
+### Setting up GPU
+As of Small Fish 2.0.1 it is **highly** recommanded to set up GPU with cellpose since its new model, CellposeSAM, is very heavy computationally even more when attempting 3D segmentation.  
+First of all, try to run small fish gpu without additional commands depending on your configuration it could work straight out of the box. If encoutering any issue try first the following :
+
+```bash
+pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio
+```
+
+```bash
+pip uninstall PyQt5 PyQt5-Qt5 PyQt5
+```
+
+```bash
+pip install -U qtpy PyQt6`
+```
+
+If running into additional problems please look at [cellpose documentation](https://cellpose.readthedocs.io/en/latest/installation.html). 
+
+### Run Small fish
 
 First activate your python environnement : 
 ```bash
