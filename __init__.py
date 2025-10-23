@@ -40,5 +40,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 __version__ = "2.0.1"
 __wiki__ = "https://github.com/2Echoes/small_fish_gui/wiki"
 
-import os
-os.environ["QT_QPA_PLATFORM"] = "xcb"
+import os, platform
+system_type = platform.system()
+
+if system_type == "Linux" :
+  try :
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
+  except Exception :
+    pass
