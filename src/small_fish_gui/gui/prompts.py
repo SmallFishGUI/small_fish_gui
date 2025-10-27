@@ -24,11 +24,11 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
     """
     if add_ok_cancel : layout += [[sg.Button('Ok', bind_return_key=True), sg.Button('Cancel')]]
 
-    size = (400,500)
+    size = (800,800)
     col_elmt = sg.Column(layout, scrollable=True, vertical_scroll_only=True, size=size, expand_x=True, expand_y=True)
     layout = [[col_elmt]]
     
-    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=True, location=None)
+    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=False, location=None)
     event, values = window.read(timeout=timeout, timeout_key=timeout_key)
     if event == None : 
         window.close()
@@ -47,7 +47,7 @@ def input_image_prompt(
         do_dense_regions_deconvolution_preset= False,
         do_clustering_preset = False,
         do_Napari_correction= False,
-) :
+    ) :
     """
         Keys :
         - 'image_path'
@@ -216,7 +216,7 @@ def hub_prompt(fov_results : pd.DataFrame, do_segmentation=False) -> 'Union[Lite
         segmentation_object = sg.Text('No segmentation in memory', font='8', text_color= 'red')
 
     layout = [
-        [sg.Text('RESULTS', font= 'bold 13')],
+        [sg.Text('RESULTS', font= 'bold 13'), sg.Stretch(), sg.Button('⚙️',font="Arial 15", button_color="gray", key="settings",)],
         [sg.Table(values= list(sumup_df.values), headings= list(sumup_df.columns), row_height=20, num_rows= 5, vertical_scroll_only=False, key= "result_table"), segmentation_object],
         [sg.Button('Segment cells'), sg.Button('Add detection'), sg.Button('Compute colocalisation'), sg.Button('Batch detection')],
         [sg.Button('Save results', button_color= 'green'), sg.Button('Save segmentation', button_color= 'green'), sg.Button('Load segmentation', button_color= 'green')],

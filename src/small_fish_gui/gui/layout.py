@@ -276,8 +276,7 @@ def _input_parameters_layout(
         do_clustering_preset,
         do_segmentation_preset,
         do_Napari_correction
-
-) :
+    ) :
     layout_image_path = path_layout(['image_path'], header= "Image")
     layout_image_path += bool_layout(['3D stack', 'Multichannel stack'], keys=['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
     
@@ -298,7 +297,7 @@ def _detection_layout(
         do_segmentation,
         segmentation_done=False,
         default_dict : pipeline_parameters={},
-) :
+    ) :
     if is_3D_stack : dim = 3
     else : dim = 2
 
@@ -379,13 +378,49 @@ def colocalization_layout(spot_list : list) :
 
     return layout
 
+def settings_layout() :
+    layout = [[sg.Text("Default values", font="ArialBold 20")]]
+    
+    image_layout = [[sg.Text("Image", font="ArialBold 15")]]
+    image_layout += bool_layout(['Multichannel stack', '3D stack'])
+    image_layout += parameters_layout(['Detection channel', 'Nucleus channel'])
+
+    segmentation_layout = [[sg.Text("Segmentation", font="ArialBold 15")]]
+    segmentation_layout += parameters_layout(["Flow threshold", "cellprob threshold", "cytoplasm diameter", "nuc_diameter"]) 
+    segmentation_layout += bool_layout(["show segmentation", "segment only nuclei", "do 3D segmentation", "save segmentation visual"])
+
+    detection_layout = [[sg.Text("Detection", font="ArialBold 15")]]
+    detection_layout += parameters_layout(["Threshold", "Threshold penalty"])
+    detection_layout += bool_layout(["Dense regions deconvolution", "Cluster computation", "show napari corrector", "interactive threshold selector"])
+
+    deconvolution_layout = [[sg.Text("Dense regions deconvolution", font="ArialBold 15")]]
+    deconvolution_layout += parameters_layout(["alpha", "beta", "gamma"])
+
+    clustering_layout = [[sg.Text("Cluster computation", font="ArialBold 15")]]
+    clustering_layout += parameters_layout(["Cluster size", "min spot number"])
+
+    coloc_layout = [[sg.Text("Co-localization computation", font="ArialBold 15")]]
+    coloc_layout += parameters_layout(['coloc_range'])
+    coloc_layout += tuple_layout(coloc_voxel_size=(1,2,3))
+
+    spot_extraction_layout = [[sg.Text("Spots extraction", font="ArialBold 15")]]
+    spot_extraction_layout += bool_layout(["do csv", "do excel"])
+    spot_extraction_layout += parameters_layout(["spot extraction folder"])
+
+    layout += [[sg.Col(image_layout)]]
+    layout += [[sg.Col(segmentation_layout, vertical_alignment='top', expand_x = True), sg.Col(detection_layout, vertical_alignment='top', expand_x = True)]]
+    layout += [[sg.Col(deconvolution_layout, vertical_alignment='top', expand_x = True), sg.Col(clustering_layout, vertical_alignment='top', expand_x = True)]]
+    layout += [[sg.Col(spot_extraction_layout, vertical_alignment='top', expand_x = True), sg.Col(coloc_layout, vertical_alignment='top', expand_x = True)]]
+
+    return layout
+
 def _ask_channel_map_layout(
         shape,
         is_3D_stack,
         multichannel,
         is_time_stack,
         preset_map={},
-) :
+    ) :
     
     x = preset_map.setdefault('x',0)
     y = preset_map.setdefault('y',0)

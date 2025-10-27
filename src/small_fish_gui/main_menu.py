@@ -13,6 +13,7 @@ from .pipeline.actions import compute_colocalisation
 from .pipeline.actions import delete_acquisitions, rename_acquisitions 
 from .pipeline.actions import save_segmentation, load_segmentation, segment_cells
 from .pipeline.actions import open_wiki
+from .pipeline.actions import open_settings
 
 from .pipeline._preprocess import clean_unused_parameters_cache
 from .batch import batch_promp
@@ -115,6 +116,9 @@ while True : #Break this loop to close small_fish
 
         elif event == "wiki" :
             open_wiki()
+
+        elif event == "settings" :
+            open_settings()
 
         else :
             break

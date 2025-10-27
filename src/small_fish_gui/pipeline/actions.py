@@ -2,9 +2,12 @@
 This submodule groups all the possible actions of the user in the main windows. It is the start of each action the user can do.
 """
 
+from torch import layout
 from ..gui.prompts import output_image_prompt, prompt_save_segmentation, prompt_load_segmentation
 from ..gui.prompts import ask_detection_confirmation, ask_cancel_detection, ask_confirmation
 from ..gui.prompts import rename_prompt
+from ..gui.prompts import prompt
+from ..gui.layout import settings_layout
 
 from ..interface.inoutput import write_results, write_list_of_results
 from ..interface.inoutput import input_segmentation, output_segmentation
@@ -457,3 +460,8 @@ def rename_acquisitions(
                 cell_coloc_df[key] = df
 
     return result_df, cell_result_df, global_coloc_df, cell_coloc_df
+
+
+def open_settings() :
+    layout = settings_layout()
+    prompt(layout)
