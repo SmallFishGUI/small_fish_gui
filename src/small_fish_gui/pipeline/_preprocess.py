@@ -3,8 +3,8 @@ import os
 import FreeSimpleGUI as sg
 from ..gui import _error_popup, _warning_popup, parameters_layout, add_header
 from ..gui.prompts import input_image_prompt, prompt
+from ..interface import get_settings
 
-import small_fish_gui.default_values as default
 
 class ParameterInputError(Exception) :
     """
@@ -362,12 +362,13 @@ def ask_input_parameters(ask_for_segmentation=True) :
     
     values = {}
     image_input_values = {}
+    default = get_settings()
     while True :
-        is_3D_preset = image_input_values.setdefault('is_3D_stack', default.IS_3D_STACK)
-        is_multichannel_preset = image_input_values.setdefault('is_multichannel', default.IS_MULTICHANNEL)
-        denseregion_preset = image_input_values.setdefault('do_dense_regions_deconvolution', default.DO_DENSE_REGIONS_DECONVOLUTION)
-        do_clustering_preset = image_input_values.setdefault('do_cluster_computation', default.DO_CLUSTER_COMPUTATION)
-        do_napari_preset = image_input_values.setdefault('show_napari_corrector', default.SHOW_NAPARI_CORRECTOR)
+        is_3D_preset = image_input_values.setdefault('is_3D_stack', default.stack_3D)
+        is_multichannel_preset = image_input_values.setdefault('is_multichannel', default.multichannel_stack)
+        denseregion_preset = image_input_values.setdefault('do_dense_regions_deconvolution', default.do_dense_regions_deconvolution)
+        do_clustering_preset = image_input_values.setdefault('do_cluster_computation', default.do_cluster)
+        do_napari_preset = image_input_values.setdefault('show_napari_corrector', default.show_napari_corrector)
 
         if ask_for_segmentation :
             image_input_values = input_image_prompt(

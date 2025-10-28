@@ -1,14 +1,13 @@
 import FreeSimpleGUI as sg
 import os
 import cellpose.models as models
-import small_fish_gui.default_values as default
 from typing import Optional, Union
 
 from cellpose.core import use_gpu
 from .tooltips import FLOW_THRESHOLD_TOOLTIP,CELLPROB_TOOLTIP
 from ..hints import pipeline_parameters
 from ..utils import check_parameter
-
+from ..interface import SettingsDict, get_default_settings, get_settings
 
 def add_header(header_text) :
     """Returns [elmnt] not layout"""
@@ -187,23 +186,23 @@ def radio_layout(values, header=None, key=None) :
 def _segmentation_layout(
         multichannel : bool,
         is_3D_stack : bool,
-        cytoplasm_model_preset= default.CYTO_MODEL, 
-        nucleus_model_preset= default.NUC_MODEL, 
-        cytoplasm_channel_preset=default.CHANNEL, 
-        nucleus_channel_preset=default.NUC_CHANNEL, 
-        other_nucleus_image_preset = None,
-        cyto_diameter_preset=default.CYTO_DIAMETER, 
-        nucleus_diameter_preset= default.NUC_DIAMETER, 
-        show_segmentation_preset= default.SHOW_SEGMENTATION,
-        save_segmentation_visual_preset = default.SAVE_SEGMENTATION_VISUAL, 
-        segment_only_nuclei_preset=default.SEGMENT_ONLY_NUCLEI, 
-        saving_path_preset=default.VISUAL_PATH, 
-        filename_preset='cell_segmentation.png',
-        cytoplasm_segmentation_3D = default.DO_3D_SEMGENTATION,
-        nucleus_segmentation_3D = default.DO_3D_SEMGENTATION,
-        cellprob_threshold = default.CELLPROB_THRESHOD,
-        flow_threshold = default.FLOW_THRESHOLD,
-        anisotropy= default.ANISOTROPY,
+        cytoplasm_model_preset,
+        nucleus_model_preset,
+        cytoplasm_channel_preset,
+        nucleus_channel_preset,
+        other_nucleus_image_preset,
+        cyto_diameter_preset,
+        nucleus_diameter_preset,
+        show_segmentation_preset,
+        save_segmentation_visual_preset, 
+        segment_only_nuclei_preset,
+        saving_path_preset,
+        filename_preset,
+        cytoplasm_segmentation_3D ,
+        nucleus_segmentation_3D ,
+        cellprob_threshold ,
+        flow_threshold ,
+        anisotropy,
         ) :
     
     USE_GPU = use_gpu()
@@ -300,10 +299,11 @@ def _detection_layout(
     ) :
     if is_3D_stack : dim = 3
     else : dim = 2
+    default = get_settings()
 
     #Detection
     detection_parameters = ['threshold', 'threshold penalty']
-    default_detection = [default_dict.setdefault('threshold',default.THRESHOLD), default_dict.setdefault('threshold penalty', default.THRESHOLD_PENALTY)]
+    default_detection = [default_dict.setdefault('threshold',default.threshold), default_dict.setdefault('threshold penalty', default.threshold_penalty)]
     opt= [True, True]
     if is_multichannel : 
         detection_parameters += ['channel_to_compute']
@@ -322,26 +322,26 @@ def _detection_layout(
     layout += tuple_layout(opt=opt, unit=unit, default_dict=default_dict, names=names, voxel_size= tuple_shape, spot_size= tuple_shape, log_kernel_size= tuple_shape, minimum_distance= tuple_shape)
     
     if (do_segmentation and is_multichannel) or (is_multichannel and segmentation_done):
-        layout += [[sg.Text("nucleus channel signal "), sg.InputText(default_text=default_dict.setdefault('nucleus_channel',default.NUC_CHANNEL), key= "nucleus channel signal", size= 5, tooltip= "Channel from which signal will be measured for nucleus features, \nallowing you to measure signal from a different channel than the one used for segmentation.")]]
+        layout += [[sg.Text("nucleus channel signal "), sg.InputText(default_text=default_dict.setdefault('nucleus_channel',default.nucleus_channel), key= "nucleus channel signal", size= 5, tooltip= "Channel from which signal will be measured for nucleus features, \nallowing you to measure signal from a different channel than the one used for segmentation.")]]
     
     #Deconvolution
     if do_dense_region_deconvolution :
-        default_dense_regions_deconvolution = [default_dict.setdefault('alpha',default.ALPHA), default_dict.setdefault('beta',default.BETA)]
+        default_dense_regions_deconvolution = [default_dict.setdefault('alpha',default.alpha), default_dict.setdefault('beta',default.beta)]
         layout += parameters_layout(['alpha', 'beta',], default_values= default_dense_regions_deconvolution, header= 'do_dense_regions_deconvolution')
-        layout += parameters_layout(['gamma'], unit= 'px', default_values= [default_dict.setdefault('gamma',default.GAMMA)])
+        layout += parameters_layout(['gamma'], unit= 'px', default_values= [default_dict.setdefault('gamma',default.gamma)])
         layout += tuple_layout(opt= {"deconvolution_kernel" : True}, unit= {"deconvolution_kernel" : 'px'}, default_dict=default_dict, deconvolution_kernel = tuple_shape)
     
     #Clustering
     if do_clustering :
-        layout += parameters_layout(['Cluster radius'],keys=['cluster_size'], unit="radius(nm)", default_values=[default_dict.setdefault('cluster_size',default.CLUSTER_SIZE)])
-        layout += parameters_layout(['Min nb spots per cluster'],keys=['min_number_of_spots'], default_values=[default_dict.setdefault('min_number_of_spots', default.MIN_NUMBER_SPOTS)])
+        layout += parameters_layout(['Cluster radius'],keys=['cluster_size'], unit="radius(nm)", default_values=[default_dict.setdefault('cluster_size',default.cluster_size)])
+        layout += parameters_layout(['Min nb spots per cluster'],keys=['min_number_of_spots'], default_values=[default_dict.setdefault('min_number_of_spots', default.min_spot)])
 
-    layout += bool_layout(['Interactive threshold selector'],keys = ['show_interactive_threshold_selector'], preset=[default.INTERACTIVE_THRESHOLD])
+    layout += bool_layout(['Interactive threshold selector'],keys = ['show_interactive_threshold_selector'], preset=[default.interactive_threshold_selector])
     layout += path_layout(
         keys=['spots_extraction_folder'],
         look_for_dir=True,
         header= "Individual spot extraction",
-        preset= default_dict.setdefault('spots_extraction_folder', default.SPOT_EXTRACTION_FOLDER)
+        preset= default_dict.setdefault('spots_extraction_folder', default.spot_extraction_folder)
     )
     default_filename = default_dict.setdefault("filename","") + "_spot_extraction"
     layout += parameters_layout(
@@ -352,7 +352,7 @@ def _detection_layout(
     layout += bool_layout(
         ['.csv','.excel',],
         keys= ['do_spots_csv', 'do_spots_excel'],
-        preset= [default_dict.setdefault('do_spots_csv',default.DO_CSV), default_dict.setdefault('do_spots_excel',default.DO_EXCEL),]
+        preset= [default_dict.setdefault('do_spots_csv',default.do_csv), default_dict.setdefault('do_spots_excel',default.do_excel),]
     )
 
     return layout
@@ -367,9 +367,9 @@ def colocalization_layout(spot_list : list) :
         [sg.DropDown(values=[""] + spot_list, key="spots2_dropdown"), sg.Input(disabled=True, text_color="black"),sg.FileBrowse("Load spot extraction", key="spots2_browse")],
     ]
 
-    layout += parameters_layout(['colocalisation distance'], unit= 'nm', default_values= default.COLOC_RANGE,)
+    layout += parameters_layout(['colocalisation distance'], unit= 'nm', default_values= default.coloc_range,)
 
-    layout += tuple_layout(opt={'voxel_size' : False},unit={'voxel_size' : "nm"}, voxel_size = ['z','y','x'], names={'voxel_size' : 'Voxel size'}, default_dict={'voxel_size' : default.COLOC_VOXEL_SIZE},)
+    layout += tuple_layout(opt={'voxel_size' : False},unit={'voxel_size' : "nm"}, voxel_size = ['z','y','x'], names={'voxel_size' : 'Voxel size'}, default_dict={'voxel_size' : default.voxel_size},)
     layout += [[sg.Text("   'voxel size' is used only for loaded spot lists.")]]
 
     layout += [[sg.Push(),sg.Button("Ok", bind_return_key=True),sg.Button("Cancel"),sg.Push(),],
@@ -378,34 +378,68 @@ def colocalization_layout(spot_list : list) :
 
     return layout
 
-def settings_layout() :
+def settings_layout(default_values : SettingsDict = get_default_settings()) :
+
+    if not isinstance(default_values, SettingsDict) : raise TypeError(f"Incorect type for default_values : {type(default_values)}; expected SettingsDict")
+    models_list = models.get_user_models() + models.MODEL_NAMES
+
     layout = [[sg.Text("Default values", font="ArialBold 20")]]
     
     image_layout = [[sg.Text("Image", font="ArialBold 15")]]
-    image_layout += bool_layout(['Multichannel stack', '3D stack'])
-    image_layout += parameters_layout(['Detection channel', 'Nucleus channel'])
+    image_layout += bool_layout(['Multichannel stack', '3D stack'],preset= [default_values.multichannel_stack, default_values.stack_3D], keys=["multichannel_stack", "stack_3D"])
+    image_layout += parameters_layout(['Detection channel', 'Nucleus channel'],default_values=[default_values.detection_channel, default_values.nucleus_channel], keys=['detection_channel', 'nucleus_channel'])
 
     segmentation_layout = [[sg.Text("Segmentation", font="ArialBold 15")]]
-    segmentation_layout += parameters_layout(["Flow threshold", "cellprob threshold", "cytoplasm diameter", "nuc_diameter"]) 
-    segmentation_layout += bool_layout(["show segmentation", "segment only nuclei", "do 3D segmentation", "save segmentation visual"])
+    segmentation_layout += [[sg.Text("Cytoplasm model : "), sg.DropDown(models_list, default_value=default_values.cytoplasm_model, key= "cytoplasm_model")]]
+    segmentation_layout += [[sg.Text("Nucleus model : "), sg.DropDown(models_list, default_value=default_values.nucleus_model, key= "nucleus_model")]]
+    segmentation_layout += parameters_layout(
+        ["Flow threshold", "Cellprob threshold", "Cytoplasm diameter", "Nucleus diameter", "Anisotropy"],
+        default_values= [default_values.flow_threshold, default_values.cellprob_threshold, default_values.cytoplasm_diameter, default_values.nucleus_diameter, default_values.anisotropy], 
+        keys=["flow_threshold", "cellprob_threshold", "cytoplasm_diameter", "nucleus_diameter", "anisotropy"]) 
+    segmentation_layout += bool_layout(
+        ["show segmentation", "segment only nuclei", "do 3D segmentation", "save segmentation visual"], 
+        preset=[default_values.show_segmentation, default_values.only_nuclei, default_values.do_3D_segmentation, default_values.save_segmentation_visuals],
+        keys= ["show_segmentation", "only_nuclei", "do_3D_segmentation","save_segmentation_visuals"])
 
     detection_layout = [[sg.Text("Detection", font="ArialBold 15")]]
-    detection_layout += parameters_layout(["Threshold", "Threshold penalty"])
-    detection_layout += bool_layout(["Dense regions deconvolution", "Cluster computation", "show napari corrector", "interactive threshold selector"])
+    detection_layout += parameters_layout(
+        ["Threshold", "Threshold penalty"],
+         default_values=[default_values.threshold, default_values.threshold_penalty],
+         keys=["threshold", "threshold_penalty"])
+    detection_layout += bool_layout(
+        ["Dense regions deconvolution", "Cluster computation", "show napari corrector", "interactive threshold selector"],
+        preset=[default_values.do_dense_regions_deconvolution, default_values.do_cluster, default_values.show_napari_corrector, default_values.interactive_threshold_selector], 
+        keys=["do_dense_regions_deconvolution", "do_cluster", "show_napari_corrector", "interactive_threshold_selector"])
 
     deconvolution_layout = [[sg.Text("Dense regions deconvolution", font="ArialBold 15")]]
-    deconvolution_layout += parameters_layout(["alpha", "beta", "gamma"])
+    deconvolution_layout += parameters_layout(
+        ["alpha", "beta", "gamma"],
+        default_values=[default_values.alpha, default_values.beta, default_values.gamma]
+        )
 
     clustering_layout = [[sg.Text("Cluster computation", font="ArialBold 15")]]
-    clustering_layout += parameters_layout(["Cluster size", "min spot number"])
+    clustering_layout += parameters_layout(
+        ["Cluster size", "Min spot number"],
+        default_values=[default_values.cluster_size, default_values.min_spot], 
+        keys=["cluster_size", "min_spot"])
 
     coloc_layout = [[sg.Text("Co-localization computation", font="ArialBold 15")]]
-    coloc_layout += parameters_layout(['coloc_range'])
-    coloc_layout += tuple_layout(coloc_voxel_size=(1,2,3))
+    coloc_layout += parameters_layout(['Co-localization range'],
+    default_values=[default_values.coloc_range],
+     keys=['coloc_range'])
+    coloc_layout += tuple_layout(default_dict= {
+        'voxel_size_z' : default_values.voxel_size[0],
+        'voxel_size_y' : default_values.voxel_size[1],
+        'voxel_size_x' : default_values.voxel_size[2],
+        }, voxel_size=('z','y','x'))
 
     spot_extraction_layout = [[sg.Text("Spots extraction", font="ArialBold 15")]]
-    spot_extraction_layout += bool_layout(["do csv", "do excel"])
-    spot_extraction_layout += parameters_layout(["spot extraction folder"])
+    spot_extraction_layout += bool_layout(
+        ["do csv", "do excel"],
+        preset=[default_values.do_csv, default_values.do_excel],
+        keys=["do_csv", "do_excel"]
+        )
+    spot_extraction_layout += [[sg.Text("spot extraction folder"), sg.Input(default_text=default_values.spot_extraction_folder, key="spot_extraction_folder", size=7) ,sg.FolderBrowse()]]
 
     layout += [[sg.Col(image_layout)]]
     layout += [[sg.Col(segmentation_layout, vertical_alignment='top', expand_x = True), sg.Col(detection_layout, vertical_alignment='top', expand_x = True)]]

@@ -4,7 +4,7 @@ Submodule with main function to call to launch batch mode.
 
 import os
 import FreeSimpleGUI as sg
-import small_fish_gui.default_values as default
+
 
 from .utils import get_elmt_from_key, create_map, call_auto_map
 from .pipeline import batch_pipeline
@@ -12,7 +12,7 @@ from .update import update_detection_tab, update_map_tab, update_master_paramete
 from .input import load, extract_files
 from .integrity import sanity_check, check_channel_map_integrity, check_detection_parameters, check_segmentation_parameters, check_output_parameters
 from ..gui.layout import _segmentation_layout, _detection_layout, _input_parameters_layout, _ask_channel_map_layout
-
+from ..interface import get_settings
 
 def batch_promp(
         results_df,
@@ -22,7 +22,7 @@ def batch_promp(
 ) :
 
     files_values = [[]]
-
+    default = get_settings()
 
     #LOAD FILES
     files_table = sg.Table(
@@ -56,11 +56,11 @@ def batch_promp(
     #Input tab
     input_layout = _input_parameters_layout(
         ask_for_segmentation=True,
-        is_3D_stack_preset= preset.setdefault("is_3D_stack" ,default.IS_3D_STACK),
+        is_3D_stack_preset= preset.setdefault("is_3D_stack" ,default.stack_3D),
         time_stack_preset=False,
-        multichannel_preset=preset.setdefault("is_multichannel" ,default.IS_MULTICHANNEL),
-        do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution", default.DO_DENSE_REGIONS_DECONVOLUTION),
-        do_clustering_preset= preset.setdefault("do_cluster_computation", default.DO_CLUSTER_COMPUTATION),
+        multichannel_preset=preset.setdefault("is_multichannel" ,default.multichannel_stack),
+        do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution", default.do_dense_regions_deconvolution),
+        do_clustering_preset= preset.setdefault("do_cluster_computation", default.do_cluster),
         do_Napari_correction=False,
         do_segmentation_preset= preset.setdefault("segmentation_done", False),
     )
@@ -87,13 +87,13 @@ def batch_promp(
     segmentation_layout = _segmentation_layout(
         multichannel=True,
         is_3D_stack=True, 
-        cytoplasm_model_preset=preset.setdefault("cyto_model_name",default.CYTO_MODEL),
-        cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",default.CHANNEL),
-        cyto_diameter_preset=preset.setdefault("cytoplasm_diameter",default.CYTO_DIAMETER),
-        nucleus_model_preset=preset.setdefault("nucleus_model_name",default.NUC_MODEL),
-        nucleus_channel_preset=preset.setdefault("nucleus channel",default.CHANNEL),
-        nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.NUC_DIAMETER),
-        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.SEGMENT_ONLY_NUCLEI),
+        cytoplasm_model_preset=preset.setdefault("cyto_model_name",default.cytoplasm_model),
+        cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",default.detection_channel),
+        cyto_diameter_preset=preset.setdefault("cytoplasm_diameter",default.cytoplasm_diameter),
+        nucleus_model_preset=preset.setdefault("nucleus_model_name",default.nucleus_model),
+        nucleus_channel_preset=preset.setdefault("nucleus channel",default.nucleus_channel),
+        nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.nucleus_diameter),
+        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.only_nuclei),
         )
     
     apply_segmentation_button = sg.Button('apply', key='apply-segmentation')

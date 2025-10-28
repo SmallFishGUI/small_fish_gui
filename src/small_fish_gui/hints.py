@@ -2,6 +2,7 @@
 #Add keys hinting to user_parameters instance keys.
 
 from typing import TypedDict, Tuple
+from dataclasses import dataclass
 from numpy import ndarray
     
 class pipeline_parameters(TypedDict) :

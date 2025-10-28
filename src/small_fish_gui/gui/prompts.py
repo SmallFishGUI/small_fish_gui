@@ -2,7 +2,7 @@ import FreeSimpleGUI as sg
 import pandas as pd
 import os
 import numpy as np
-import small_fish_gui.default_values as default
+
 
 from typing import Literal, Union
 from .layout import (
@@ -15,8 +15,9 @@ from .layout import (
     tuple_layout,
     _detection_layout
     )
-from ..interface import open_image, check_format, FormatError
+from ..interface import open_image, check_format, FormatError, get_settings
 
+default = get_settings()
 
 def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', add_scrollbar=True) :
     """
@@ -31,8 +32,13 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
     window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=False, location=None)
     event, values = window.read(timeout=timeout, timeout_key=timeout_key)
     if event == None : 
-        window.close()
-        quit()
+        answ = sg.popup_yes_no("Do you want to close Small Fish ?")
+        if answ == "Yes" : 
+            window.close()
+            quit()
+        else :
+            window.close()
+            return "Cancel"
 
     elif event == 'Cancel' :
         window.close()

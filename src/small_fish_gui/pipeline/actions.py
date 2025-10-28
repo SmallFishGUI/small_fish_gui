@@ -11,6 +11,7 @@ from ..gui.layout import settings_layout
 
 from ..interface.inoutput import write_results, write_list_of_results
 from ..interface.inoutput import input_segmentation, output_segmentation
+from ..interface import get_settings, SettingsDict, write_settings
 
 from ._preprocess import map_channels
 from ._preprocess import prepare_image_detection
@@ -33,6 +34,7 @@ import pandas as pd
 import FreeSimpleGUI as sg
 import numpy as np
 import webbrowser
+from pydantic import ValidationError
 
 def open_wiki() :
     webbrowser.open_new_tab(__wiki__)
@@ -463,5 +465,38 @@ def rename_acquisitions(
 
 
 def open_settings() :
-    layout = settings_layout()
-    prompt(layout)
+    settings = get_settings()
+
+    while True :
+        layout = settings_layout(settings)
+        event, values = prompt(layout)
+
+        if event == "Cancel" : 
+            return False
+        else :
+            try :
+                if values['threshold'] == "" : values['threshold'] = None
+                if values["voxel_size_z"] == "z" : values["voxel_size_z"] = 1 
+                if values["voxel_size_y"] == "y" : values["voxel_size_y"] = 1 
+                if values["voxel_size_x"] == "x" : values["voxel_size_x"] = 1 
+                values["voxel_size"] = (int(values['voxel_size_z']), int(values['voxel_size_y']), int(values['voxel_size_x']))
+                new_settings = SettingsDict(**values)
+
+            except ValidationError as e :
+
+                layout = []
+                for error in e.errors() :
+                    layout.append([sg.Text(f"{error['loc']} : {error['msg']}")])
+                layout.append([sg.Button("Close")])
+                prompt(layout, add_ok_cancel=False)
+
+            except ValueError as e :
+                if not "invalid literal" in str(e) :
+                    raise e
+                sg.popup("Incorrect voxel size parameters")
+    
+            else :
+                break
+    
+    write_settings(new_settings)
+    return True

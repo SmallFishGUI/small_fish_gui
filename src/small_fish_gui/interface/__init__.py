@@ -9,3 +9,9 @@ from .image import FormatError
 from .image import get_voxel_size
 
 from .inoutput import write_results
+
+from .user_settings import (SettingsDict,
+                            get_settings,
+                            get_default_settings,
+                            write_settings
+                            )
