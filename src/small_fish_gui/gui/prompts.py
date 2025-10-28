@@ -29,7 +29,7 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
     col_elmt = sg.Column(layout, scrollable=True, vertical_scroll_only=True, size=size, expand_x=True, expand_y=True)
     layout = [[col_elmt]]
     
-    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=False, location=None)
+    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=True, location=None)
     event, values = window.read(timeout=timeout, timeout_key=timeout_key)
     if event == None : 
         answ = sg.popup_yes_no("Do you want to close Small Fish ?")
