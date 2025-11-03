@@ -3,9 +3,12 @@ Constant submodule to have a common reference for parameters default values
 """
 import os
 
+WORKING_DIRECTORY = None
+
 #Image
 IS_MULTICHANNEL = False
 IS_3D_STACK = False
+DO_BACKGROUND_REMOVAL = False
 CHANNEL = 0
 NUC_CHANNEL = 1
 
@@ -53,6 +56,8 @@ SPOT_EXTRACTION_FOLDER = os.getcwd()
 
 def get_default_settings() :
     return {
+        "working_directory" : os.getcwd() if WORKING_DIRECTORY is None else WORKING_DIRECTORY,
+        "do_background_removal" : DO_BACKGROUND_REMOVAL,
         "multichannel_stack" : IS_MULTICHANNEL,
         "stack_3D" : IS_3D_STACK,
         "detection_channel" : CHANNEL,

@@ -208,7 +208,7 @@ def convert_parameters_types(values:dict) :
 
     #Parameters
     int_list = ['threshold', 'channel_to_compute', 'channel_to_compute', 'min_number_of_spots', 'cluster_size','nucleus channel signal']
-    float_list = ['alpha', 'beta', 'gamma', 'threshold penalty']
+    float_list = ['alpha', 'beta', 'gamma', 'threshold_penalty']
 
     for parameter in int_list :
         try :
@@ -369,6 +369,7 @@ def ask_input_parameters(ask_for_segmentation=True) :
         denseregion_preset = image_input_values.setdefault('do_dense_regions_deconvolution', default.do_dense_regions_deconvolution)
         do_clustering_preset = image_input_values.setdefault('do_cluster_computation', default.do_cluster)
         do_napari_preset = image_input_values.setdefault('show_napari_corrector', default.show_napari_corrector)
+        do_background_removal_preset = image_input_values.setdefault('do_background_removal_preset', default.do_background_removal)
 
         if ask_for_segmentation :
             image_input_values = input_image_prompt(

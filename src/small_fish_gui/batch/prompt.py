@@ -94,6 +94,16 @@ def batch_promp(
         nucleus_channel_preset=preset.setdefault("nucleus channel",default.nucleus_channel),
         nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.nucleus_diameter),
         segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.only_nuclei),
+        filename_preset="",
+        cytoplasm_segmentation_3D= preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation),
+        nucleus_segmentation_3D=preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation),
+        anisotropy=preset.setdefault("anisotropy", default.anisotropy),
+        flow_threshold=preset.setdefault("flow_threshold",default.flow_threshold),
+        cellprob_threshold=preset.setdefault("cellprob_threshold", default.cellprob_threshold),
+        show_segmentation_preset=False,
+        save_segmentation_visual_preset=False,
+        saving_path_preset="",
+        other_nucleus_image_preset=""
         )
     
     apply_segmentation_button = sg.Button('apply', key='apply-segmentation')

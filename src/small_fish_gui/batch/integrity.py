@@ -156,7 +156,7 @@ def check_output_parameters(values) :
     if len(values['batch_name']) == 0 : is_output_ok = False
 
     #extension
-    if values['csv'] or values['xlsx'] or values['feather'] :
+    if values['csv'] or values['xlsx'] :
         pass
     else :
         sg.popup("Select at least one data format for output.")

@@ -4,8 +4,13 @@ Submodule containing custom class for napari widgets
 import numpy as np
 import pandas as pd
 import bigfish.detection as detection
+import bigfish.stack as stack
+
 from napari.layers import Labels, Points
 from magicgui import magicgui
+from magicgui.widgets import SpinBox, Container
+from bigfish.detection import spots_thresholding, get_object_radius_pixel
+
 
 from abc import ABC, abstractmethod
 from typing import Tuple
@@ -24,6 +29,8 @@ class NapariWidget(ABC) :
         This should return a widget you can add to the napari (QWidget)
         """
         pass
+
+# Corrector widgets
 
 class ClusterWidget(NapariWidget) :
     """
@@ -261,9 +268,6 @@ class ClusterMerger(ClusterWidget) :
             self.cluster_layer.refresh()
 
         return merge_cluster
-
-
-
 
 class ClusterUpdater(NapariWidget) :
     """
@@ -510,4 +514,173 @@ class ClusterCleaner(ClusterWizard) :
                 self.cluster_layer.refresh()
 
         self.cluster_layer.events.features.connect(delete_empty_cluster)
+
+
+
+#Detection widgets
+class SpotDetector(NapariWidget) :
+    """
+    Widget aimed at helping user to set detection parameters : threshold, spot radius and so on...
+    """
+
+    def __init__(
+        self,
+        image: np.ndarray,
+        default_threshold : int,
+        default_spot_size : tuple,
+        default_kernel_size : tuple,
+        default_min_distance : tuple,
+        voxel_size : tuple,
+
+        ) :
+        self.image = image
+        self.voxel_size = voxel_size
+        self.default_threshold = default_threshold
+        self.spot_radius = default_spot_size
+        self.kernel_size = default_kernel_size
+        self.min_distance = default_min_distance
+        self._update_filtered_image()
+        self.maximum_threshold = self.filtered_image.max()
+        super().__init__()
+
+    def _update_filtered_image(self) :
+        self.filtered_image = _apply_log_filter(
+            image=self.image,
+            voxel_size=self.voxel_size,
+            spot_radius=self.spot_radius,
+            log_kernel_size=self.kernel_size
+        )
+
+        self.local_maxima = _local_maxima_mask(
+            image_filtered=self.filtered_image,
+            voxel_size=self.voxel_size,
+            spot_radius=self.spot_radius,
+            minimum_distance=self.min_distance
+        )
+
+    def _create_widget(self) :
         
+        dim = len(self.voxel_size)
+        if self.spot_radius is None : 
+            spot_radius_dummy = ["z","y","x"][:dim]
+        else :
+            spot_radius_dummy = self.spot_radius
+
+        if self.kernel_size is None : 
+            kernel_size_dummy = ["z","y","x"][:dim]
+        else :
+            kernel_size_dummy = self.kernel_size
+        
+        if self.min_distance is None : 
+            min_distance_dummy = ["z","y","x"][:dim]
+        else:
+            min_distance_dummy = self.min_distance
+
+        @magicgui(
+            threshold = {"widget_type" : SpinBox, "min" : "5", "value" : self.default_threshold, "max" : self.filtered_image.max()},
+            spot_radius = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value=val) for val in spot_radius_dummy], "layout" : "horizontal"},
+            kernel_size = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value= val) for val in kernel_size_dummy], "layout" : "horizontal"},
+            minimum_distance = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value=val) for val in min_distance_dummy], "layout" : "horizontal"},
+
+        )
+        def find_spots(
+            threshold : int,
+            spot_radius : Container,
+            kernel_size : Container,
+            minimum_distance : Container,
+        ) :
+            spot_radius = tuple(user_input.value for user_input in spot_radius)
+            kernel_size = tuple(user_input.value for user_input in kernel_size)
+            minimum_distance = tuple(user_input.value for user_input in minimum_distance)
+
+            do_update = False
+            if spot_radius != self.spot_radius :
+                self.spot_radius = spot_radius
+                do_update = True
+            if kernel_size != self.kernel_size :
+                self.kernel_size = kernel_size
+                do_update = True
+            if minimum_distance != self.min_distance :
+                self.min_distance = minimum_distance
+                do_update = True
+            if do_update :
+                self._update_filtered_image()
+            
+            spots = spots_thresholding(
+            image=self.filtered_image,
+            mask_local_max=self.local_maxima,
+            threshold=threshold
+            )[0]
+    
+            scale = compute_anisotropy_coef(self.voxel_size)
+    
+            layer_args = {
+                'size': 5, 
+                'scale' : scale, 
+                'face_color' : 'transparent', 
+                'border_color' : 'red', 
+                'symbol' : 'disc', 
+                'opacity' : 0.7, 
+                'blending' : 'translucent', 
+                'name': 'single spots',
+                'features' : {'threshold' : threshold},
+                'visible' : True,
+                }
+
+            filtered_image_layer_args = {
+                "contrast_limits" :  [self.filtered_image.min(), self.filtered_image.max()],
+                "colormap" :  'gray',
+                "scale" : scale,
+                "blending" : 'additive'
+            }
+            
+            return [
+                (self.filtered_image, filtered_image_layer_args, 'image'),
+                (spots, spot_layer_args, 'points')
+                ]
+        return find_spots
+
+
+def _apply_log_filter(
+        image: np.ndarray,
+        voxel_size : tuple,
+        spot_radius : tuple,
+        log_kernel_size,
+
+) :
+    """
+    Apply spot detection steps until local maxima step (just before final threshold).
+    Return filtered image.
+    """
+    
+    ndim = image.ndim
+
+    if type(log_kernel_size) == type(None) :
+        log_kernel_size = get_object_radius_pixel(
+                voxel_size_nm=voxel_size,
+                object_radius_nm=spot_radius,
+                ndim=ndim)
+    
+    
+    image_filtered = stack.log_filter(image, log_kernel_size)
+    
+    return image_filtered
+    
+def _local_maxima_mask(
+    image_filtered: np.ndarray,
+    voxel_size : tuple,
+    spot_radius : tuple,
+    minimum_distance
+
+    ) : 
+
+    ndim = image_filtered.ndim
+
+    if type(minimum_distance) == type(None) :
+        minimum_distance = get_object_radius_pixel(
+            voxel_size_nm=voxel_size,
+            object_radius_nm=spot_radius,
+            ndim=ndim)
+    mask_local_max = detection.local_maximum_detection(image_filtered, minimum_distance)
+    
+    return mask_local_max.astype(bool)

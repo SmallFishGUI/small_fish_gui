@@ -38,7 +38,7 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
             quit()
         else :
             window.close()
-            return "Cancel"
+            return "Cancel", {}
 
     elif event == 'Cancel' :
         window.close()
@@ -53,6 +53,7 @@ def input_image_prompt(
         do_dense_regions_deconvolution_preset= False,
         do_clustering_preset = False,
         do_Napari_correction= False,
+        do_background_removal_preset = False,
     ) :
     """
         Keys :
@@ -68,10 +69,15 @@ def input_image_prompt(
 
     """
     layout_image_path = path_layout(['image_path'], header= "Image")
-    layout_image_path += bool_layout(['3D stack', 'Multichannel stack'],keys= ['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
+    layout_image_path += bool_layout(['3D stack', 'Multichannel stack',],keys= ['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
     
     if type(do_dense_regions_deconvolution_preset) != type(None) and type(do_clustering_preset) != type(None) and type(do_Napari_correction) != type(None): 
-        layout_image_path += bool_layout(['Dense regions deconvolution', 'Compute clusters', 'Open results in Napari'], keys = ['do_dense_regions_deconvolution', 'do_cluster_computation', 'show_napari_corrector'], preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_Napari_correction], header= "Pipeline settings")
+        layout_image_path += bool_layout(
+            ['Dense regions deconvolution', 'Compute clusters', 'Open results in Napari',], 
+            keys = ['do_dense_regions_deconvolution', 'do_cluster_computation', 'show_napari_corrector'], 
+            preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_Napari_correction], 
+            header= "Pipeline settings"
+            )
     
     event, values = prompt(layout_image_path, add_scrollbar=False)
 
@@ -101,30 +107,22 @@ def output_image_prompt(filename) :
         relaunch = False
         layout = path_layout(['folder'], look_for_dir= True, header= "Output parameters :")
         layout += parameters_layout(["filename"], default_values= [filename + "_quantification"], size=25)
-        layout += bool_layout(['csv','Excel', 'Feather'])
+        layout += bool_layout(['csv','Excel'])
 
         event,values= prompt(layout)
         if event == ('Cancel') : return None
 
         values['filename'] = values['filename'].replace(".xlsx","")
-        values['filename'] = values['filename'].replace(".feather","")
         excel_filename = values['filename'] + ".xlsx"
-        feather_filename = values['filename'] + ".feather"
 
-
-        if not values['Excel'] and not values['Feather'] and not values['csv'] :
-            sg.popup("Please check at least one box : Excel/Feather/csv")
+        if not values['Excel'] and not values['csv'] :
+            sg.popup("Please check at least one box : Excel/csv")
             relaunch = True
         elif not os.path.isdir(values['folder']) :
             sg.popup("Incorrect folder")
             relaunch = True
         elif os.path.isfile(values['folder'] + excel_filename) and values['Excel']:
             if ask_replace_file(excel_filename) :
-                pass
-            else :
-                relaunch = True
-        elif os.path.isfile(values['folder'] + feather_filename) and values['Feather']:
-            if ask_replace_file(feather_filename) :
                 pass
             else :
                 relaunch = True
@@ -212,7 +210,10 @@ def _sumup_df(results: pd.DataFrame) :
 
     return res
 
-def hub_prompt(fov_results : pd.DataFrame, do_segmentation=False) -> 'Union[Literal["Add detection", "Compute colocalisation", "Batch detection", "Rename acquisition", "Save results", "Delete acquisitions", "Reset segmentation", "Reset results", "Segment cells"], dict[Literal["result_table", ""]]]':
+def hub_prompt(
+    fov_results : pd.DataFrame, 
+    do_segmentation=False
+    ) -> 'Union[Literal["Add detection", "Compute colocalisation", "Batch detection", "Rename acquisition", "Save results", "Delete acquisitions", "Reset segmentation", "Reset results", "Segment cells"], dict[Literal["result_table", ""]]]':
 
     sumup_df = _sumup_df(fov_results)
     
@@ -238,6 +239,7 @@ def hub_prompt(fov_results : pd.DataFrame, do_segmentation=False) -> 'Union[Lite
             window.close()
             return event, values
 
+    
 def coloc_prompt(spot_list : list) :
     layout = colocalization_layout(spot_list)
 

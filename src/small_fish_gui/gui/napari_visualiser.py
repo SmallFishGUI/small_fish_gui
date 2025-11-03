@@ -11,6 +11,7 @@ from bigfish.stack import check_parameter
 from ._napari_widgets import CellLabelEraser, SegmentationReseter, ChangesPropagater, FreeLabelPicker
 from ._napari_widgets import ClusterIDSetter, ClusterMerger, ClusterUpdater, ClusterCreator
 from ._napari_widgets import initialize_all_cluster_wizards
+from ._napari_widgets import SpotDetector
 from ..utils import compute_anisotropy_coef
 
 def correct_spots(
@@ -160,7 +161,7 @@ def show_segmentation(
         cyto_image : np.ndarray = None,
         cyto_label : np.ndarray = None,
         anisotrpy : float = 1,
-) :
+        ) :
     dim = nuc_image.ndim
     
     if type(cyto_image) != type(None) :
@@ -228,8 +229,10 @@ def show_segmentation(
 
 def threshold_selection(
         image : np.ndarray,
-        filtered_image : np.ndarray,
-        threshold_slider,
+        default_threshold : int,
+        default_spot_radius : tuple,
+        default_kernel_size : tuple,
+        default_min_distance : tuple,
         voxel_size : tuple,
         ) :
     
@@ -247,16 +250,18 @@ def threshold_selection(
         scale= scale,
         blending= 'additive'
     )
-    Viewer.add_image(
-        data= filtered_image,
-        contrast_limits= [filtered_image.min(), filtered_image.max()],
-        colormap= 'gray',
-        scale=scale,
-        blending='additive'
+    
+    spot_detector = SpotDetector(
+        image=image,
+        default_threshold= default_threshold,
+        default_kernel_size=default_kernel_size,
+        default_min_distance=default_min_distance,
+        default_spot_size=default_spot_radius,
+        voxel_size=voxel_size
     )
 
-    Viewer.window.add_dock_widget(threshold_slider, name='threshold_selector')
-    threshold_slider() #First occurence with auto or entered threshold.
+    Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
+    spot_detector.widget() #First occurence with auto or entered threshold.
     
     napari.run()
 

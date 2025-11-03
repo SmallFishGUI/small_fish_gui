@@ -9,6 +9,9 @@ from ..hints import pipeline_parameters
 from ..utils import check_parameter
 from ..interface import SettingsDict, get_default_settings, get_settings
 
+
+settings = get_settings()
+
 def add_header(header_text) :
     """Returns [elmnt] not layout"""
     header = [sg.Text('\n{0}'.format(header_text), size= (len(header_text),3), font= 'bold 15')]
@@ -102,7 +105,7 @@ def tuple_layout(opt=None, default_dict={}, unit:dict={}, names : dict = {}, **t
 
     return layout
 
-def path_layout(keys= [],look_for_dir = False, header=None, preset=os.getcwd()) :
+def path_layout(keys= [],look_for_dir = False, header=None, preset=settings.working_directory) :
     """
     If not look for dir then looks for file.
     """
@@ -280,9 +283,9 @@ def _input_parameters_layout(
     layout_image_path += bool_layout(['3D stack', 'Multichannel stack'], keys=['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
     
     layout_image_path += bool_layout(
-        ['Dense regions deconvolution', 'Compute clusters', 'Cell segmentation', 'Open Napari corrector'],
-        keys= ['do_dense_regions_deconvolution', 'do_cluster_computation', 'do_segmentation', 'show_napari_corrector'], 
-        preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_segmentation_preset, do_Napari_correction], 
+        ['Dense regions deconvolution', 'Compute clusters', 'Cell segmentation','Autofluorescence background removal', 'Open Napari corrector'],
+        keys= ['do_dense_regions_deconvolution', 'do_cluster_computation', 'do_segmentation', 'do_background_removal' ,'show_napari_corrector' ], 
+        preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_segmentation_preset, do_background_removal, do_Napari_correction], 
         header= "Pipeline settings")
 
 
@@ -305,13 +308,15 @@ def _detection_layout(
     detection_parameters = ['threshold', 'threshold penalty']
     default_detection = [default_dict.setdefault('threshold',default.threshold), default_dict.setdefault('threshold penalty', default.threshold_penalty)]
     opt= [True, True]
+    parameters_keys = ['threshold', 'threshold_penalty']
     if is_multichannel : 
-        detection_parameters += ['channel_to_compute']
+        detection_parameters += ['channel to compute']
         opt += [False]
-        default_detection += [default_dict.setdefault('channel_to_compute', '')]
+        parameters_keys += ['channel_to_compute']
+        default_detection += [default_dict.setdefault('channel_to_compute', default.detection_channel)]
     
     layout = [[sg.Text("Green parameters", text_color= 'green'), sg.Text(" are optional parameters.")]]
-    layout += parameters_layout(detection_parameters, header= 'Detection', opt=opt, default_values=default_detection)
+    layout += parameters_layout(detection_parameters, header= 'Detection', opt=opt, default_values=default_detection, keys= parameters_keys)
     
     if dim == 2 : tuple_shape = ('y','x')
     else : tuple_shape = ('z','y','x')
@@ -384,6 +389,7 @@ def settings_layout(default_values : SettingsDict = get_default_settings()) :
     models_list = models.get_user_models() + models.MODEL_NAMES
 
     layout = [[sg.Text("Default values", font="ArialBold 20")]]
+    layout += [[sg.Text("Default working directory"), sg.Input(default_text=default_values.working_directory, key= "working_directory"), sg.FolderBrowse()]]
     
     image_layout = [[sg.Text("Image", font="ArialBold 15")]]
     image_layout += bool_layout(['Multichannel stack', '3D stack'],preset= [default_values.multichannel_stack, default_values.stack_3D], keys=["multichannel_stack", "stack_3D"])
@@ -407,9 +413,9 @@ def settings_layout(default_values : SettingsDict = get_default_settings()) :
          default_values=[default_values.threshold, default_values.threshold_penalty],
          keys=["threshold", "threshold_penalty"])
     detection_layout += bool_layout(
-        ["Dense regions deconvolution", "Cluster computation", "show napari corrector", "interactive threshold selector"],
-        preset=[default_values.do_dense_regions_deconvolution, default_values.do_cluster, default_values.show_napari_corrector, default_values.interactive_threshold_selector], 
-        keys=["do_dense_regions_deconvolution", "do_cluster", "show_napari_corrector", "interactive_threshold_selector"])
+        ["Dense regions deconvolution", "Cluster computation", "show napari corrector", "Autofloresnce background removal", "interactive threshold selector"],
+        preset=[default_values.do_dense_regions_deconvolution, default_values.do_cluster, default_values.show_napari_corrector, default_values.do_background_removal, default_values.interactive_threshold_selector], 
+        keys=["do_dense_regions_deconvolution", "do_cluster", "show_napari_corrector","do_background_removal", "interactive_threshold_selector"])
 
     deconvolution_layout = [[sg.Text("Dense regions deconvolution", font="ArialBold 15")]]
     deconvolution_layout += parameters_layout(

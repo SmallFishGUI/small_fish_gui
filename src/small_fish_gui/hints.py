@@ -25,6 +25,7 @@ class pipeline_parameters(TypedDict) :
             do_spots_excel : bool
             do_spots_feather : bool
             do_spots_csv : bool
+            do_background_removal : bool
             dim : int
             filename : str
             flow_threshold_cyto : int

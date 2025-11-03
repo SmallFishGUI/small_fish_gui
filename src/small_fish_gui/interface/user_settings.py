@@ -9,6 +9,8 @@ from pydantic import BaseModel, ValidationError
 from typing import Tuple, Optional
 
 class SettingsDict(BaseModel) :
+    working_directory : str
+    do_background_removal : bool
     multichannel_stack : bool
     stack_3D : bool
     detection_channel : int
@@ -64,8 +66,7 @@ def _load_settings() :
         print(f"Incorrect settings, using default settings \n{e}")
         settings = _init_settings()
     
-    else :
-        return settings
+    return settings
 
 def _init_settings() :
     default_settings = get_default_settings()
