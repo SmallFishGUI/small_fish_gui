@@ -74,14 +74,6 @@ First of all, try to run small fish gpu without additional commands depending on
 pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio
 ```
 
-```bash
-pip uninstall PyQt5 PyQt5-Qt5 PyQt5
-```
-
-```bash
-pip install -U qtpy PyQt6`
-```
-
 If running into additional problems please look at [cellpose documentation](https://cellpose.readthedocs.io/en/latest/installation.html). 
 
 ### Run Small fish
