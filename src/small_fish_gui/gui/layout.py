@@ -270,14 +270,15 @@ def _segmentation_layout(
     return layout
 
 def _input_parameters_layout(
-        ask_for_segmentation,
-        is_3D_stack_preset,
-        time_stack_preset,
-        multichannel_preset,
-        do_dense_regions_deconvolution_preset,
-        do_clustering_preset,
-        do_segmentation_preset,
-        do_Napari_correction
+        ask_for_segmentation : bool,
+        is_3D_stack_preset : bool,
+        time_stack_preset : bool,
+        multichannel_preset : bool,
+        do_dense_regions_deconvolution_preset : bool,
+        do_clustering_preset : bool,
+        do_segmentation_preset : bool,
+        do_background_removal_preset : bool,
+        do_Napari_correction : bool
     ) :
     layout_image_path = path_layout(['image_path'], header= "Image")
     layout_image_path += bool_layout(['3D stack', 'Multichannel stack'], keys=['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
@@ -285,7 +286,7 @@ def _input_parameters_layout(
     layout_image_path += bool_layout(
         ['Dense regions deconvolution', 'Compute clusters', 'Cell segmentation','Autofluorescence background removal', 'Open Napari corrector'],
         keys= ['do_dense_regions_deconvolution', 'do_cluster_computation', 'do_segmentation', 'do_background_removal' ,'show_napari_corrector' ], 
-        preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_segmentation_preset, do_background_removal, do_Napari_correction], 
+        preset= [do_dense_regions_deconvolution_preset, do_clustering_preset, do_segmentation_preset, do_background_removal_preset, do_Napari_correction], 
         header= "Pipeline settings")
 
 

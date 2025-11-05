@@ -5,15 +5,17 @@ import numpy as np
 import pandas as pd
 import bigfish.detection as detection
 import bigfish.stack as stack
+from skimage.segmentation import find_boundaries
 
-from napari.layers import Labels, Points
+from napari.layers import Labels, Points, Image
 from magicgui import magicgui
 from magicgui.widgets import SpinBox, Container
 from bigfish.detection import spots_thresholding, get_object_radius_pixel
-
+from napari.types import LayerDataTuple
 
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, List
+from ..utils import compute_anisotropy_coef
 
 class NapariWidget(ABC) :
     """
@@ -544,6 +546,7 @@ class SpotDetector(NapariWidget) :
         super().__init__()
 
     def _update_filtered_image(self) :
+
         self.filtered_image = _apply_log_filter(
             image=self.image,
             voxel_size=self.voxel_size,
@@ -561,37 +564,40 @@ class SpotDetector(NapariWidget) :
     def _create_widget(self) :
         
         dim = len(self.voxel_size)
-        if self.spot_radius is None : 
-            spot_radius_dummy = ["z","y","x"][:dim]
+        if dim == 2 :
+            tuple_hint = Tuple[int,int]
         else :
-            spot_radius_dummy = self.spot_radius
-
-        if self.kernel_size is None : 
-            kernel_size_dummy = ["z","y","x"][:dim]
-        else :
-            kernel_size_dummy = self.kernel_size
-        
-        if self.min_distance is None : 
-            min_distance_dummy = ["z","y","x"][:dim]
-        else:
-            min_distance_dummy = self.min_distance
+            tuple_hint = Tuple[int,int,int]
 
         @magicgui(
             threshold = {"widget_type" : SpinBox, "min" : "5", "value" : self.default_threshold, "max" : self.filtered_image.max()},
-            spot_radius = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value=val) for val in spot_radius_dummy], "layout" : "horizontal"},
-            kernel_size = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value= val) for val in kernel_size_dummy], "layout" : "horizontal"},
-            minimum_distance = {"widget_type" : Container, "widgets" : [SpinBox(min=0, value=val) for val in min_distance_dummy], "layout" : "horizontal"},
+            spot_radius = {"label" : "spot radius(zyx)", "value" : self.spot_radius},
+            kernel_size = {"label" : "LoG kernel size(zyx)"},
+            minimum_distance = {"label" : "Distance min between spots"},
 
         )
         def find_spots(
             threshold : int,
-            spot_radius : Container,
-            kernel_size : Container,
-            minimum_distance : Container,
-        ) :
-            spot_radius = tuple(user_input.value for user_input in spot_radius)
-            kernel_size = tuple(user_input.value for user_input in kernel_size)
-            minimum_distance = tuple(user_input.value for user_input in minimum_distance)
+            spot_radius : tuple_hint,
+            kernel_size : tuple_hint,
+            minimum_distance : tuple_hint,
+        ) -> List[LayerDataTuple] :
+
+            if (np.array(spot_radius) < 0).any() :
+                raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
+            
+            if (np.array(kernel_size) < 0).any() :
+                raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
+            
+            if (np.array(minimum_distance) < 0).any() :
+                raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
+            
+            if isinstance(spot_radius, tuple) :
+                if not all(spot_radius) : spot_radius = None #any value set to 0
+            if isinstance(kernel_size, tuple) :
+                if not all(kernel_size) : kernel_size = None #any value set to 0
+            if isinstance(minimum_distance, tuple) :
+                if not all(minimum_distance) : minimum_distance = None #any value set to 0
 
             do_update = False
             if spot_radius != self.spot_radius :
@@ -614,7 +620,7 @@ class SpotDetector(NapariWidget) :
     
             scale = compute_anisotropy_coef(self.voxel_size)
     
-            layer_args = {
+            spot_layer_args = {
                 'size': 5, 
                 'scale' : scale, 
                 'face_color' : 'transparent', 
@@ -631,7 +637,8 @@ class SpotDetector(NapariWidget) :
                 "contrast_limits" :  [self.filtered_image.min(), self.filtered_image.max()],
                 "colormap" :  'gray',
                 "scale" : scale,
-                "blending" : 'additive'
+                "blending" : 'additive',
+                "name" : "filtered image"
             }
             
             return [
@@ -684,3 +691,124 @@ def _local_maxima_mask(
     mask_local_max = detection.local_maximum_detection(image_filtered, minimum_distance)
     
     return mask_local_max.astype(bool)
+
+class DenseRegionDeconvolver(NapariWidget) :
+    def __init__(
+        self,
+        image : Image,
+        spots : Points, 
+        alpha : float, 
+        beta : float, 
+        gamma : float,
+        spot_radius : tuple,
+        kernel_size : tuple,
+        voxel_size : tuple
+        ) :
+        
+        self.image = image
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.spots = spots
+        self.spot_radius = spot_radius
+        self.kernel_size = kernel_size
+        self.voxel_size = voxel_size
+        self.update_dense_regions()
+        super().__init__()
+
+    def update_dense_regions(self) :
+        dense_regions, spot_out_regions,max_size = detection.get_dense_region(
+            image=self.image,
+            spots=self.spots.data,
+            voxel_size = self.voxel_size,
+            beta=self.beta,
+            spot_radius=self.spot_radius
+        )
+        del spot_out_regions,max_size
+
+        mask = np.zeros(shape=self.image.shape, dtype= np.int16)
+        for label, region in enumerate(dense_regions) :
+            reg_im = region.image
+            coordinates = np.argwhere(reg_im)
+            z,y,x = coordinates.T
+            min_z,min_y,min_x,*_ = region.bbox
+            z += min_z
+            y += min_y
+            x += min_x
+
+            mask[z,y,x] = label + 1
+
+        self.dense_regions = mask
+
+    def _create_widget(self) :
+
+        dim = len(self.voxel_size)
+        tuple_hint = Tuple[int,int] if dim == 2 else Tuple[int,int,int]
+        tuple_dummy = tuple(0 for i in range(dim))
+
+        @magicgui
+        def dense_region_deconvolution(
+            alpha : float = self.alpha,
+            beta : float = self.beta,
+            gamma : float = self.gamma,
+            spot_radius : tuple_hint = tuple_dummy if self.spot_radius is None else self.spot_radius,
+            kernel_size : tuple_hint = tuple_dummy if self.kernel_size is None else self.kernel_size,
+        ) -> List[LayerDataTuple] :
+
+            if (np.array(spot_radius) < 0).any() :
+                    raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
+            if (np.array(kernel_size) < 0).any() :
+                raise ValueError("kernel size : set value > 0 (0 to ignore argument)")
+            
+            if isinstance(spot_radius,tuple) :
+                if not all(spot_radius) : spot_radius = None #any value set to 0
+            if isinstance(kernel_size,tuple) :
+                if not all(kernel_size) : kernel_size = None #any value set to 0
+
+            do_update = False
+            if spot_radius != self.spot_radius :
+                self.spot_radius = spot_radius
+                do_update = True
+            if beta != self.beta :
+                self.beta = beta
+                do_update=True
+            if do_update : self.update_dense_regions()
+            self.alpha = alpha
+            self.gamma = gamma
+            self.kernel_size = kernel_size
+
+            spots, _dense_region, _reference_spot = detection.decompose_dense(
+                image= self.image, 
+                spots= self.spots.data, 
+                voxel_size=self.voxel_size, 
+                spot_radius=self.spot_radius, 
+                kernel_size=self.kernel_size, 
+                alpha=self.alpha, 
+                beta=self.beta, 
+                gamma=self.gamma
+            )
+            del _dense_region, _reference_spot
+
+            scale = compute_anisotropy_coef(self.voxel_size)
+            spot_layer_args = {
+                'size': 5, 
+                'scale' : scale, 
+                'face_color' : 'transparent', 
+                'border_color' : 'blue', 
+                'symbol' : 'disc', 
+                'opacity' : 0.7, 
+                'blending' : 'translucent', 
+                'name': 'decovoluted spots',
+                'visible' : True,
+                }
+
+            dense_region_args = {
+                "scale" : scale,
+                "name": "Dense regions",
+                "colormap" : ["red"] * self.dense_regions.max()
+            }
+
+            return [(self.dense_regions, dense_region_args, 'labels'), (spots, spot_layer_args, 'points')]
+        return dense_region_deconvolution
+
+

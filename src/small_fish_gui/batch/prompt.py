@@ -62,6 +62,7 @@ def batch_promp(
         do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution", default.do_dense_regions_deconvolution),
         do_clustering_preset= preset.setdefault("do_cluster_computation", default.do_cluster),
         do_Napari_correction=False,
+        do_background_removal_preset= preset.setdefault("do_background_removal",False),
         do_segmentation_preset= preset.setdefault("segmentation_done", False),
     )
     input_layout += [[sg.Button('Ok')]]

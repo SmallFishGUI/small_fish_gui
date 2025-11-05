@@ -6,7 +6,7 @@ from ..hints import pipeline_parameters
 from ._preprocess import ParameterInputError
 from ._preprocess import check_integrity, convert_parameters_types
 
-from ..gui.napari_visualiser import correct_spots, threshold_selection
+from ..gui.napari_visualiser import correct_spots, interactive_detection
 from ..gui import add_default_loading
 from ..gui import detection_parameters_promt
 
@@ -258,7 +258,7 @@ def initiate_detection(user_parameters : pipeline_parameters, map_, shape) :
     return user_parameters
 
 @add_default_loading
-def _launch_detection(image, image_input_values: dict) :
+def detect_spots(image, image_input_values: dict) :
 
     """
     Performs spots detection
@@ -277,39 +277,25 @@ def _launch_detection(image, image_input_values: dict) :
         threshold = threshold_penalty * compute_auto_threshold(image, voxel_size=voxel_size, spot_radius=spot_size, log_kernel_size=log_kernel_size, minimum_distance=minimum_distance)
         threshold = max(threshold,15) # Force threshold to be at least 15 to match napari widget and to not have too many spots for weak configs
 
+    filtered_image = _apply_log_filter(
+        image=image,
+        voxel_size=voxel_size,
+        spot_radius=spot_size,
+        log_kernel_size = log_kernel_size,
+    )
 
+    local_maxima = _local_maxima_mask(
+        image_filtered=filtered_image,
+        voxel_size=voxel_size,
+        spot_radius=spot_size,
+        minimum_distance=minimum_distance
+    )
 
-    if threshold_user_selection :
-        spots, threshold = threshold_selection(
-            image=image,
-            default_threshold=threshold,
-            default_kernel_size=log_kernel_size,
-            default_spot_radius= spot_size,
-            default_min_distance= minimum_distance,
-            voxel_size=voxel_size
-        )
-
-        
-    else :
-        filtered_image = _apply_log_filter(
-            image=image,
-            voxel_size=voxel_size,
-            spot_radius=spot_size,
-            log_kernel_size = log_kernel_size,
-        )
-
-        local_maxima = _local_maxima_mask(
-            image_filtered=filtered_image,
-            voxel_size=voxel_size,
-            spot_radius=spot_size,
-            minimum_distance=minimum_distance
-        )
-
-        spots = detection.spots_thresholding(
-            image=filtered_image,
-            mask_local_max=local_maxima,
-            threshold=threshold
-        )[0]
+    spots = detection.spots_thresholding(
+        image=filtered_image,
+        mask_local_max=local_maxima,
+        threshold=threshold
+    )[0]
         
     return spots, threshold
 
@@ -336,7 +322,16 @@ def launch_dense_region_deconvolution(image, spots, image_input_values: dict,) :
     deconvolution_kernel = image_input_values.get('deconvolution_kernel')
     dim = image_input_values['dim']
         
-    spots, dense_regions, ref_spot = detection.decompose_dense(image=image, spots=spots, voxel_size=voxel_size, spot_radius=spot_size, kernel_size=deconvolution_kernel, alpha=alpha, beta=beta, gamma=gamma)
+    spots, dense_regions, ref_spot = detection.decompose_dense(
+        image=image, 
+        spots=spots, 
+        voxel_size=voxel_size, 
+        spot_radius=spot_size, 
+        kernel_size=deconvolution_kernel, 
+        alpha=alpha, 
+        beta=beta, 
+        gamma=gamma
+        )
     del dense_regions, ref_spot
 
     return spots
@@ -624,11 +619,30 @@ def launch_detection(
     do_dense_region_deconvolution = user_parameters['do_dense_regions_deconvolution']
     do_clustering = user_parameters['do_cluster_computation']
 
-    spots, threshold  = _launch_detection(image, user_parameters, hide_loading = hide_loading)
-        
-    if do_dense_region_deconvolution : 
-        spots = launch_dense_region_deconvolution(image, spots, user_parameters, hide_loading = hide_loading)
-        
+    if user_parameters['show_interactive_threshold_selector'] :
+        spots, threshold = interactive_detection(
+            image=image,
+            voxel_size=user_parameters['voxel_size'],
+            interactive_threshold=True,
+            dense_region_deconvolution=user_parameters['do_dense_regions_deconvolution'],
+            do_background_removal= False,
+            default_threshold = user_parameters['threshold'],
+            default_kernel_size = user_parameters['log_kernel_size'],
+            default_min_distance = user_parameters['minimum_distance'],
+            default_spot_radius = user_parameters['spot_size'],
+            deconvolution_spot_radius = user_parameters['spot_size'],
+            deconvolution_kernel_size = user_parameters['log_kernel_size'],
+            alpha = user_parameters['alpha'],
+            beta = user_parameters['beta'],
+            gamma = user_parameters['gamma'],
+
+        )
+    else :
+        spots, threshold  = detect_spots(image, user_parameters, hide_loading = hide_loading)
+            
+        if do_dense_region_deconvolution : 
+            spots = launch_dense_region_deconvolution(image, spots, user_parameters, hide_loading = hide_loading)
+            
     if do_clustering : 
         clusters, clustered_spots = launch_clustering(spots, user_parameters, hide_loading = hide_loading) #012 are coordinates #3 is number of spots per cluster, #4 is cluster index
         spots, spots_cluster_id = clustered_spots[:,:-1], clustered_spots[:,-1]

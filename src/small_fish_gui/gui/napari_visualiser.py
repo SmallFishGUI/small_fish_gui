@@ -8,10 +8,12 @@ import napari
 from magicgui import widgets
 
 from bigfish.stack import check_parameter
+from napari.layers import Image, Points
 from ._napari_widgets import CellLabelEraser, SegmentationReseter, ChangesPropagater, FreeLabelPicker
 from ._napari_widgets import ClusterIDSetter, ClusterMerger, ClusterUpdater, ClusterCreator
 from ._napari_widgets import initialize_all_cluster_wizards
-from ._napari_widgets import SpotDetector
+from ._napari_widgets import SpotDetector, DenseRegionDeconvolver
+from ._napari_widgets import NapariWidget
 from ..utils import compute_anisotropy_coef
 
 def correct_spots(
@@ -227,22 +229,26 @@ def show_segmentation(
 
     return new_nuc_label, new_cyto_label
 
-def threshold_selection(
+def interactive_detection(
         image : np.ndarray,
-        default_threshold : int,
-        default_spot_radius : tuple,
-        default_kernel_size : tuple,
-        default_min_distance : tuple,
+        interactive_threshold : bool,
+        do_background_removal : bool,
+        dense_region_deconvolution : bool,
         voxel_size : tuple,
+        **kwargs
         ) :
     
     """
     To view code for spot selection have a look at magicgui instance created with `detection._create_threshold_slider` which is then passed to this napari wrapper as 'threshold_slider' argument.
+    
+    note : spots,threshold
     """
     
+    assert any([interactive_threshold, do_background_removal, dense_region_deconvolution]), "Wrong code path"
+
     Viewer = napari.Viewer(title= "Small fish - Threshold selector", ndisplay=2, show=True)
     scale = compute_anisotropy_coef(voxel_size)
-    Viewer.add_image(
+    image_layer = Viewer.add_image(
         data= image,
         contrast_limits= [image.min(), image.max()],
         name= "raw signal",
@@ -251,24 +257,88 @@ def threshold_selection(
         blending= 'additive'
     )
     
-    spot_detector = SpotDetector(
-        image=image,
-        default_threshold= default_threshold,
-        default_kernel_size=default_kernel_size,
-        default_min_distance=default_min_distance,
-        default_spot_size=default_spot_radius,
-        voxel_size=voxel_size
-    )
+    #TODO if do_background_removal :
+    #     background_remover = _interactive_spot_decomposition(voxel_size, **kwargs)
+    #     Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
+    #     background_remover.widget() #First occurence with auto or entered threshold.
 
+    spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
     spot_detector.widget() #First occurence with auto or entered threshold.
     
+    spots_layer = Viewer.layers['single spots']
+
+    if dense_region_deconvolution :
+        dense_region_deconvolver = _interactive_spot_decomposition(
+            image, 
+            voxel_size,
+            spots = spots_layer, 
+            **kwargs
+            )
+        Viewer.window.add_dock_widget(dense_region_deconvolver.widget, name='dense_region_deconvolver')
+        # dense_region_deconvolver.widget() #First occurence with auto or entered threshold.
+
     napari.run()
 
-    spots = Viewer.layers['single spots'].data.astype(int)
+    spots = Viewer.layers['single spots'].data.astype(np.int32)
     if len(spots) == 0 :
         pass
     else :
         threshold = Viewer.layers['single spots'].properties.get('threshold')[0]
 
     return spots, threshold
+
+
+
+def _interactive_threshold_selection(image : np.ndarray, voxel_size : tuple, **kwargs) -> NapariWidget :
+
+    key_error = "Missing keys for interactive threshold selection, required keys are : 'default_threshold', 'default_spot_radius','default_kernel_size','default_min_distance',"
+    if not all([key for key in kwargs.keys()]) : raise ValueError(key_error)
+    type_dict = {
+        'default_threshold' : (type(None), int),
+        'default_spot_radius' : (type(None), tuple),
+        'default_kernel_size' : (type(None), tuple),
+        'default_min_distance' : (type(None), tuple),
+        }
+
+    for key, item in type_dict.items() :
+        if not isinstance(kwargs[key], item) : raise TypeError(f"Expected type {item} for {key} argument, got {type(kwargs[key])}") 
+
+    spot_detector = SpotDetector(
+        image=image,
+        default_threshold= kwargs["default_threshold"],
+        default_kernel_size=kwargs["default_kernel_size"],
+        default_min_distance=kwargs["default_min_distance"],
+        default_spot_size=kwargs["default_spot_radius"],
+        voxel_size=voxel_size
+    )
+
+    return spot_detector
+
+def _interactive_spot_decomposition(image : np.ndarray, voxel_size : tuple, **kwargs) -> NapariWidget :
+    key_error = "Missing keys for interactive threshold selection, required keys are : 'spots', 'deconvolution_spot_radius','deconvolution_kernel_size','alpha', 'beta', 'gamma'"
+    if not all([key for key in kwargs.keys()]) : raise ValueError(key_error)
+    type_dict = {
+        'spots' : Points,
+        'deconvolution_spot_radius' : (type(None), tuple),
+        'alpha' : float,
+        'beta' : float,
+        'gamma' : float,
+        'deconvolution_kernel_size' : (type(None), tuple),
+        }
+
+    dense_regions_deconvolver = DenseRegionDeconvolver(
+        image= image,
+        spots= kwargs['spots'],
+        alpha=kwargs['alpha'],
+        beta=kwargs['beta'],
+        gamma=kwargs['gamma'],
+        spot_radius=kwargs['deconvolution_spot_radius'],
+        kernel_size=kwargs['deconvolution_kernel_size'],
+        voxel_size=voxel_size
+    )
+
+    return dense_regions_deconvolver
+
+def _interactive_background_removal(**kwargs) -> NapariWidget :
+    pass
