@@ -20,7 +20,7 @@ from types import GeneratorType
 from napari.types import LayerDataTuple
 
 import numpy as np
-from numpy import NaN
+from numpy import nan
 import pandas as pd
 import FreeSimpleGUI as sg
 import bigfish.detection as detection
@@ -214,8 +214,13 @@ def initiate_detection(user_parameters : pipeline_parameters, map_, shape) :
     
     #Attempt to read voxel size from metadata
     voxel_size = get_voxel_size(user_parameters['image_path'])
-    if voxel_size is None or not user_parameters.get('voxel_size') is None:
-        pass
+    if voxel_size is None  :
+        if not user_parameters.get('voxel_size') is None:
+            pass
+        else :
+            detection_parameters['voxel_size_z'] = None
+            detection_parameters['voxel_size_y'] = None
+            detection_parameters['voxel_size_x'] = None
     else :
         detection_parameters['voxel_size'] = [round(v) if isinstance(v, (float,int)) else None for v in voxel_size]
         detection_parameters['voxel_size_z'] = detection_parameters['voxel_size'][0] if isinstance(detection_parameters['voxel_size'][0], (float,int)) else None
@@ -223,7 +228,7 @@ def initiate_detection(user_parameters : pipeline_parameters, map_, shape) :
         detection_parameters['voxel_size_x'] = detection_parameters['voxel_size'][2] if isinstance(detection_parameters['voxel_size'][2], (float,int)) else None
 
     #Setting default spot size to 1.5 voxel
-    if detection_parameters.get('spot_size') is None :
+    if detection_parameters.get('spot_size') is None and not detection_parameters.get('voxel_size') is None:
         detection_parameters['spot_size_z'] = round(detection_parameters['voxel_size_z']*1.5) if isinstance(detection_parameters['voxel_size_z'], (float,int)) else None
         detection_parameters['spot_size_y'] = round(detection_parameters['voxel_size_y']*1.5) if isinstance(detection_parameters['voxel_size_y'],(float,int)) else None
         detection_parameters['spot_size_x'] = round(detection_parameters['voxel_size_x']*1.5) if isinstance(detection_parameters['voxel_size_x'],(float,int)) else None
@@ -347,7 +352,7 @@ def launch_post_detection(image, spots, image_input_values: dict,) :
     fov_res['spot_number'] = len(spots)
     snr_res = compute_snr_spots(image, spots, voxel_size, spot_size)
     if len(spots) == 0 :
-        fov_res['spotsSignal_median'], fov_res['spotsSignal_mean'], fov_res['spotsSignal_std'] = np.NaN, np.NaN, np.NaN
+        fov_res['spotsSignal_median'], fov_res['spotsSignal_mean'], fov_res['spotsSignal_std'] = np.nan, np.nan, np.nan
     else :
         if dim == 3 :
             Z,Y,X = list(zip(*spots))
@@ -372,9 +377,9 @@ def _compute_cell_snr(image: np.ndarray, bbox, spots, voxel_size, spot_size) :
 
     if len(spots) == 0 :
         res = {
-           'snr_mean' : np.NaN,
-           'snr_median' : np.NaN,
-           'snr_std' : np.NaN,
+           'snr_mean' : np.nan,
+           'snr_median' : np.nan,
+           'snr_std' : np.nan,
         }
 
         return res
@@ -532,8 +537,8 @@ def launch_cell_extraction(
                 else : raise AssertionError("Impossible number of dim for foci : ", len(foci_index))
                 foci_in_nuc_number = nuc_mask[tuple(foci_index)].astype(bool).sum()
         else :
-            foci_number = np.NaN
-            foci_in_nuc_number = np.NaN
+            foci_number = np.nan
+            foci_in_nuc_number = np.nan
 
         #Signal to noise
         snr_dict = _compute_cell_snr(
@@ -730,7 +735,7 @@ def launch_features_computation(
     if type(cell_label) != type(None) and type(nucleus_label) != type(None):
         frame_results['cell_number'] = len(cell_result_dframe) 
     else : 
-        frame_results['cell_number'] = NaN
+        frame_results['cell_number'] = nan
     frame_results['spots'] = spots
     frame_results['clusters'] = clusters
     frame_results['spots_cluster_id'] = spots_cluster_id
@@ -752,9 +757,9 @@ def launch_features_computation(
             cell_result_dframe['total_rna_number'] = cell_result_dframe['nb_rna_in_nuc'] + cell_result_dframe['nb_rna_out_nuc']
         else : # This can happen when segmentation is performed and detects cells but they are on fov edges and thus removed by big-fish.
             print("\033[1;31m All segmented cells where skipped because they are found on fov edges (incomplete cells), if you want to analyse this image check segmentation.\033[00m")
-            cell_result_dframe['nb_rna_in_nuc'] = np.NaN
-            cell_result_dframe['nb_rna_out_nuc'] = np.NaN
-            cell_result_dframe['total_rna_number'] = np.NaN
+            cell_result_dframe['nb_rna_in_nuc'] = np.nan
+            cell_result_dframe['nb_rna_out_nuc'] = np.nan
+            cell_result_dframe['total_rna_number'] = np.nan
 
         
     return frame_results, cell_result_dframe
@@ -773,7 +778,7 @@ def _compute_clustered_spots_dataframe(clustered_spots) :
     })
 
     null_idx = df[df['cluster_id'] == -1].index
-    df.loc[null_idx, 'cluster_id'] = np.NaN
+    df.loc[null_idx, 'cluster_id'] = np.nan
 
     return df
 

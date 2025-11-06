@@ -48,7 +48,7 @@ def compute_Spots(
         return pd.DataFrame()
 
     if type(cluster_id) == type(None) : #When user doesn't select cluster
-        cluster_id = [np.NaN]*len(spots)
+        cluster_id = [np.nan]*len(spots)
 
     index = list(zip(*spots))
     index = tuple(index)
@@ -59,14 +59,14 @@ def compute_Spots(
         else :
             in_nuc_list = list(nucleus_label.astype(bool)[index])
     else :
-        in_nuc_list = np.NaN
+        in_nuc_list = np.nan
     if type(cell_label) != type(None) :
         if cell_label.ndim == 3 :
             cell_label_list = list(cell_label[index])
         else :    
             cell_label_list = list(cell_label[index[-2:]]) #Only plane coordinates
     else :
-        cell_label_list = np.NaN
+        cell_label_list = np.nan
     id_list = np.arange(len(spots))
 
     coord_list = list(zip(*index))

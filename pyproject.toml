@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Small Fish is a python application for the analysis of smFish images. It provides a ready to use graphical interface to combine famous python packages for cell analysis without any need for coding."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: BSD License",
@@ -21,20 +21,21 @@ dependencies = [
 "cellpose>=4.0.6",
 "czifile>=2019.7.2",
 "imageio>=2.34.0",
+"napari[all]",
 "napari>=0.4.19.post1",
 "napari-console>=0.0.9",
 "napari-plugin-engine>=0.2.0",
 "napari-plugin-manager>=0.1.0a2",
 "napari-svg>=0.1.10",
-"numpy>=1.24.4",
-"pandas>=1.5.3",
+"numpy>=1.26",
+"pandas>=2.1.1",
 "FreeSimpleGUI>=5.1.1",
-"scipy == 1.9.1",
+"scipy",
 "scikit-image>=0.19.1",
 "scikit-learn>=1.3.2",
 "openpyxl>=3.1.2",
 "pyarrow>=11.0.0",
-"aicsimageio>=4.14.0",
+"aicsimageio",
 "aicspylibczi>=3.3.1",
 ]
 

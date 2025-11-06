@@ -93,7 +93,7 @@ def correct_spots(
                 "cluster_id" : clusters[:,dim+1],
                 "end" : [True] * len(clusters_coordinates)
                 }, 
-            feature_defaults= {"spot_number" : 0, "cluster_id" : -2, "end" : True} # napari features default will not work with np.NaN passing -2 instead.
+            feature_defaults= {"spot_number" : 0, "cluster_id" : -2, "end" : True} # napari features default will not work with np.nan passing -2 instead.
         )
 
     if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')

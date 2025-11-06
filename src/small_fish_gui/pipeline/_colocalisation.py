@@ -136,7 +136,7 @@ def spots_colocalisation(
         voxel_size : (z,y,x) tuple
     """
 
-    if len(spot_list1) == 0 or len(spot_list2) == 0 : return np.NaN
+    if len(spot_list1) == 0 or len(spot_list2) == 0 : return np.nan
     if len(spot_list1[0]) != len(spot_list2[0]) : 
         raise MissMatchError("dimensionalities of spots 1 and spots 2 don't match.")
 
@@ -250,8 +250,8 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
         fraction_spots2_coloc_spots1 = spots_colocalisation(spot_list1=spots2, spot_list2=spots1, distance= colocalisation_distance, voxel_size=voxel_size) / spot2_total
     except MissMatchError as e :
         sg.popup(str(e))
-        fraction_spots1_coloc_spots2 = np.NaN
-        fraction_spots2_coloc_spots1 = np.NaN
+        fraction_spots1_coloc_spots2 = np.nan
+        fraction_spots2_coloc_spots1 = np.nan
 
     if 'clusters' in acquisition1.columns :
         try : 
@@ -259,12 +259,12 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
             fraction_spots2_coloc_cluster1 = spots_colocalisation(spot_list1=spots2, spot_list2=spots1[clusters_id_1 != -1], distance= colocalisation_distance, voxel_size=voxel_size) / spot2_total
         except MissMatchError as e :
             sg.popup(str(e))
-            fraction_spots2_coloc_cluster1 = np.NaN
+            fraction_spots2_coloc_cluster1 = np.nan
         except TypeError : # clusters not computed
-            fraction_spots2_coloc_cluster1 = np.NaN
+            fraction_spots2_coloc_cluster1 = np.nan
 
 
-    else : fraction_spots2_coloc_cluster1 = np.NaN
+    else : fraction_spots2_coloc_cluster1 = np.nan
 
     if 'clusters' in acquisition2.columns :
         try :
@@ -272,12 +272,12 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
             fraction_spots1_coloc_cluster2 = spots_colocalisation(spot_list1=spots1, spot_list2=spots2[clusters_id_2 != -1], distance= colocalisation_distance, voxel_size=voxel_size) / spot1_total
         except MissMatchError as e :# clusters not computed
             sg.popup(str(e))
-            fraction_spots1_coloc_cluster2 = np.NaN
+            fraction_spots1_coloc_cluster2 = np.nan
         except TypeError :
-            fraction_spots1_coloc_cluster2 = np.NaN
+            fraction_spots1_coloc_cluster2 = np.nan
 
 
-    else : fraction_spots1_coloc_cluster2 = np.NaN
+    else : fraction_spots1_coloc_cluster2 = np.nan
 
     if 'clusters' in acquisition2.columns and 'clusters' in acquisition1.columns :
         try :
@@ -287,15 +287,15 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
             fraction_cluster2_coloc_cluster1 = spots_colocalisation(spot_list1=spots2[clusters_id_2 != -1], spot_list2=spots1[clusters_id_1 != -1], distance= colocalisation_distance, voxel_size=voxel_size) / total_clustered_spots2
         except MissMatchError as e :# clusters not computed
             sg.popup(str(e))
-            fraction_cluster1_coloc_cluster2 = np.NaN
-            fraction_cluster2_coloc_cluster1 = np.NaN
+            fraction_cluster1_coloc_cluster2 = np.nan
+            fraction_cluster2_coloc_cluster1 = np.nan
         except TypeError :
-            fraction_cluster1_coloc_cluster2 = np.NaN
-            fraction_cluster2_coloc_cluster1 = np.NaN
+            fraction_cluster1_coloc_cluster2 = np.nan
+            fraction_cluster2_coloc_cluster1 = np.nan
 
     else :
-        fraction_cluster1_coloc_cluster2 = np.NaN
-        fraction_cluster2_coloc_cluster1 = np.NaN
+        fraction_cluster1_coloc_cluster2 = np.nan
+        fraction_cluster2_coloc_cluster1 = np.nan
         
 
     coloc_df = pd.DataFrame({

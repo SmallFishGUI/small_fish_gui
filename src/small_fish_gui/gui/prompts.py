@@ -204,7 +204,7 @@ def _sumup_df(results: pd.DataFrame) :
     COLUMNS = ['acquisition_id','name','threshold', 'spot_number', 'cell_number', 'filename', 'channel_to_compute']
 
     if len(results) > 0 :
-        if 'channel_to_compute' not in results : results['channel_to_compute'] = np.NaN
+        if 'channel_to_compute' not in results : results['channel_to_compute'] = np.nan
         res = results.loc[:,COLUMNS]
     else :
         res = pd.DataFrame(columns= COLUMNS)

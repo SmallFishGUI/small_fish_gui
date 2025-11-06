@@ -257,7 +257,7 @@ def save_results(
             path = dic['folder']
             filename = dic['filename']
             do_excel = dic['Excel']
-            do_feather = dic['Feather']
+            do_feather = False
             do_csv = dic['csv']
 
             if 'rna_coords' in cell_result_df.columns : cell_result_df = cell_result_df.drop(columns='rna_coords')
@@ -275,7 +275,7 @@ def save_results(
             path = dic['folder']
             filename = dic['filename']
             do_excel = dic['Excel']
-            do_feather = dic['Feather']
+            do_feather = False
             do_csv = dic['csv']
 
             if 'rna_coords' in cell_result_df.columns : cell_result_df = cell_result_df.drop(columns='rna_coords')
