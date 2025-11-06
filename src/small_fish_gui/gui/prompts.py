@@ -48,6 +48,7 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
         return event, values
 
 def input_image_prompt(
+        filename_preset : str,
         is_3D_stack_preset=False,
         multichannel_preset = False,
         do_dense_regions_deconvolution_preset= False,
@@ -68,7 +69,7 @@ def input_image_prompt(
     Returns Values
 
     """
-    layout_image_path = path_layout(['image_path'], header= "Image")
+    layout_image_path = path_layout(['image_path'], header= "Image", preset=filename_preset)
     layout_image_path += bool_layout(['3D stack', 'Multichannel stack',],keys= ['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
     
     if type(do_dense_regions_deconvolution_preset) != type(None) and type(do_clustering_preset) != type(None) and type(do_Napari_correction) != type(None): 

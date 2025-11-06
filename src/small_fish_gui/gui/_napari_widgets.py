@@ -693,6 +693,9 @@ def _local_maxima_mask(
     return mask_local_max.astype(bool)
 
 class DenseRegionDeconvolver(NapariWidget) :
+    """
+    Widget for interactive detection. Create 2 layes : Labels layer representing dense region that could be deconvoluted and Points layer with deconvoluted spots
+    """
     def __init__(
         self,
         image : Image,

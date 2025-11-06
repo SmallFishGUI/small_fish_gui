@@ -19,7 +19,7 @@ def batch_promp(
         cell_results_df,
         acquisition_id,
         preset: dict={},
-) :
+    ) :
 
     files_values = [[]]
     default = get_settings()
@@ -46,12 +46,12 @@ def batch_promp(
     sanity_header = sg.Text("Dimension sanity", font=('bold',15), pad=(0,10))
     dimension_number_text = sg.Text("Dimension number : unknown")
     
-#LAYOUT INIT
-#########################################
-#####   COLUMNS
-#########################################
-
-#####   Tabs
+    #LAYOUT INIT
+    #########################################
+    #####   COLUMNS
+    #########################################
+    
+    #####   Tabs
 
     #Input tab
     input_layout = _input_parameters_layout(

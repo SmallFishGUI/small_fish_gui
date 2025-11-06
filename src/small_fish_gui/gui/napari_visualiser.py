@@ -276,7 +276,7 @@ def interactive_detection(
             **kwargs
             )
         Viewer.window.add_dock_widget(dense_region_deconvolver.widget, name='dense_region_deconvolver')
-        # dense_region_deconvolver.widget() #First occurence with auto or entered threshold.
+        dense_region_deconvolver.widget() #First occurence with auto or entered threshold.
 
     napari.run()
 

@@ -3,7 +3,9 @@ import os
 import FreeSimpleGUI as sg
 from ..gui import _error_popup, _warning_popup, parameters_layout, add_header
 from ..gui.prompts import input_image_prompt, prompt
+from ..gui.layout import _ask_channel_map_layout
 from ..interface import get_settings
+from ..hints import pipeline_parameters
 
 
 class ParameterInputError(Exception) :
@@ -135,13 +137,13 @@ def _ask_channel_map(shape, is_3D_stack, is_time_stack, multichannel, preset_map
         t = preset_map.setdefault('t',0)
 
 
-        layout = [
-            add_header("Dimensions mapping") + [sg.Text("Image shape : {0}".format(shape))]
-        ]
-        layout += [parameters_layout(['x','y'], default_values=[x,y])]
-        if is_3D_stack : layout += [parameters_layout(['z'], default_values=[z])]
-        if multichannel : layout += [parameters_layout(['c'], default_values=[c])]
-        if is_time_stack : layout += [parameters_layout(['t'], default_values=[t])]
+        layout = _ask_channel_map_layout(
+            is_3D_stack=is_3D_stack,
+            is_time_stack=False,
+            multichannel=multichannel,
+            shape=shape,
+            preset_map=preset_map
+        )
 
         event, preset_map = prompt(layout, add_scrollbar=False)
         if event == 'Cancel' : return save_preset
@@ -355,15 +357,23 @@ def clean_unused_parameters_cache(user_parameters: dict) :
     
     return user_parameters
 
-def ask_input_parameters(ask_for_segmentation=True) :
+def ask_input_parameters(image_input_values : pipeline_parameters, ask_for_segmentation=True) :
     """
     Prompt user with interface allowing parameters setting for bigFish detection / deconvolution.
     """
     
     values = {}
-    image_input_values = {}
     default = get_settings()
     while True :
+        filename_preset = image_input_values.setdefault("image_path", default.working_directory)
+
+        if os.path.isfile(filename_preset) :
+            filename_preset = os.path.dirname(filename_preset)
+        elif os.path.isdir(filename_preset) :
+            pass
+        else :
+            filename_preset = default.working_directory
+
         is_3D_preset = image_input_values.setdefault('is_3D_stack', default.stack_3D)
         is_multichannel_preset = image_input_values.setdefault('is_multichannel', default.multichannel_stack)
         denseregion_preset = image_input_values.setdefault('do_dense_regions_deconvolution', default.do_dense_regions_deconvolution)
@@ -373,6 +383,7 @@ def ask_input_parameters(ask_for_segmentation=True) :
 
         if ask_for_segmentation :
             image_input_values = input_image_prompt(
+                filename_preset= filename_preset,
                 is_3D_stack_preset=is_3D_preset,
                 multichannel_preset=is_multichannel_preset,
                 do_dense_regions_deconvolution_preset=None,
@@ -381,6 +392,7 @@ def ask_input_parameters(ask_for_segmentation=True) :
             )
         else :
             image_input_values = input_image_prompt(
+                filename_preset= filename_preset,
                 is_3D_stack_preset=is_3D_preset,
                 multichannel_preset=is_multichannel_preset,
                 do_dense_regions_deconvolution_preset=denseregion_preset,

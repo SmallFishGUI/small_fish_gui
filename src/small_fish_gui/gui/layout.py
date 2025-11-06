@@ -470,7 +470,7 @@ def _ask_channel_map_layout(
     t = preset_map.setdefault('t',0)
 
     layout = [
-            add_header("Dimensions mapping"), [sg.Text("Image shape : {0}".format(shape))]
+            [sg.Text("Dimensions mapping", font= "bold 15"), sg.Text("Image shape : {0}".format(shape))]
         ]
     layout += parameters_layout(['x','y'], default_values=[x,y])
     if is_3D_stack : layout += parameters_layout(['z'], default_values=[z])

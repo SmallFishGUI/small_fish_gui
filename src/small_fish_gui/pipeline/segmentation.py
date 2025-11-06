@@ -42,7 +42,7 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
     segmentation_parameters = user_parameters.copy()
 
     #Ask for image parameters
-    new_parameters = ask_input_parameters(ask_for_segmentation= True) #The image is open and stored inside user_parameters
+    new_parameters = ask_input_parameters(user_parameters, ask_for_segmentation= True) #The image is open and stored inside user_parameters
     if type(new_parameters) == type(None) : #if user clicks 'Cancel'
         return nucleus_label , cytoplasm_label, user_parameters
     else :

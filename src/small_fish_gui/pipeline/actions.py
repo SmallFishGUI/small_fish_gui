@@ -65,7 +65,7 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
     new_cell_results_df = pd.DataFrame()
 
     #Ask for image parameters
-    new_parameters = ask_input_parameters(ask_for_segmentation= False) #The image is open and stored inside user_parameters
+    new_parameters = ask_input_parameters(user_parameters, ask_for_segmentation= False) #The image is open and stored inside user_parameters
     if type(new_parameters) == type(None) : #if user clicks 'Cancel'
         return new_results_df, new_cell_results_df, acquisition_id, user_parameters
     else :
