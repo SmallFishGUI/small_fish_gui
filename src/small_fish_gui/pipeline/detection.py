@@ -640,7 +640,7 @@ def launch_detection(
             alpha = user_parameters['alpha'],
             beta = user_parameters['beta'],
             gamma = user_parameters['gamma'],
-
+            image_stack = user_parameters['image'] if user_parameters['is_multichannel'] else None,
         )
     else :
         spots, threshold  = detect_spots(image, user_parameters, hide_loading = hide_loading)

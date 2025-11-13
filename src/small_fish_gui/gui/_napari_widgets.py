@@ -1,6 +1,7 @@
 """
 Submodule containing custom class for napari widgets
 """
+import os
 import numpy as np
 import pandas as pd
 import bigfish.detection as detection
@@ -16,6 +17,10 @@ from napari.types import LayerDataTuple
 from abc import ABC, abstractmethod
 from typing import Tuple, List
 from ..utils import compute_anisotropy_coef
+
+from AF_eraser import remove_autofluorescence_RANSACfit
+from pathlib import Path
+from ..interface import open_image
 
 class NapariWidget(ABC) :
     """
@@ -815,3 +820,62 @@ class DenseRegionDeconvolver(NapariWidget) :
         return dense_region_deconvolution
 
 
+class BackgroundRemover(NapariWidget) :
+    def __init__(
+        self, 
+        signal : Image, 
+        voxel_size : tuple,
+        image_stack : np.ndarray = None, 
+        ) :
+        
+        self.image_stack : image_stack
+        self.signal = signal.copy()
+        self.voxel_size = voxel_size
+        super().__init__()
+        if self.image_stack is None : self.disable_channel() #Image stack is None when image stack is not multichannel
+
+
+    def disable_channel(self) :
+        self.gui.channel.enabled = False
+
+    def _create_widget(self) :
+        @magicgui(
+            channel = {'min' : 0, 'max' : self.image_stack.shape[0] - 1},
+            max_trial = {'min' : 0},
+        )
+        def remove_background(
+            background_path : Path,
+            channel : int,
+            max_trial : int,
+            reset : bool
+        )-> LayerDataTuple :
+
+            self.gui = remove_background
+
+            if reset : 
+                result = self.signal
+            else :
+                if os.path.isfile(background_path) :
+                    background = open_image(background_path)
+                elif self.image_stack is None :
+                    raise FileNotFoundError(f"{background_path} is not a valid file.")
+                else :
+                    background = self.image_stack[channel]
+                if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
+
+                result, score = remove_autofluorescence_RANSACfit(
+                    signal=self.signal,
+                    background=background,
+                    max_trials=max_trial
+                )
+
+            signal_args = {
+                "contrast_limits" : [result.min(), result.max()],
+                "name" : "raw signal",
+                "colormap" : 'green',
+                "scale" : scale,
+                "blending" : 'additive'
+            }
+
+            return (result, signal_args, 'image')
+        return remove_background

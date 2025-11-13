@@ -12,7 +12,7 @@ from napari.layers import Image, Points
 from ._napari_widgets import CellLabelEraser, SegmentationReseter, ChangesPropagater, FreeLabelPicker
 from ._napari_widgets import ClusterIDSetter, ClusterMerger, ClusterUpdater, ClusterCreator
 from ._napari_widgets import initialize_all_cluster_wizards
-from ._napari_widgets import SpotDetector, DenseRegionDeconvolver
+from ._napari_widgets import SpotDetector, DenseRegionDeconvolver, BackgroundRemover
 from ._napari_widgets import NapariWidget
 from ..utils import compute_anisotropy_coef
 
@@ -257,10 +257,9 @@ def interactive_detection(
         blending= 'additive'
     )
     
-    #TODO if do_background_removal :
-    #     background_remover = _interactive_spot_decomposition(voxel_size, **kwargs)
-    #     Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
-    #     background_remover.widget() #First occurence with auto or entered threshold.
+    if do_background_removal :
+        background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
+        Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
 
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
@@ -340,5 +339,12 @@ def _interactive_spot_decomposition(image : np.ndarray, voxel_size : tuple, **kw
 
     return dense_regions_deconvolver
 
-def _interactive_background_removal(**kwargs) -> NapariWidget :
-    pass
+def _interactive_background_removal(image : np.ndarray, voxel_size : tuple, **kwargs) -> NapariWidget :
+
+    background_remover = BackgroundRemover(
+        signal= image,
+        voxel_size = voxel_size,
+        image_stack= kwargs.get('image_stack'),
+    )
+
+    return background_remover
