@@ -29,23 +29,25 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
     col_elmt = sg.Column(layout, scrollable=True, vertical_scroll_only=True, size=size, expand_x=True, expand_y=True)
     layout = [[col_elmt]]
     
-    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=True, location=None)
-    event, values = window.read(timeout=timeout, timeout_key=timeout_key)
-    if event == None : 
-        answ = sg.popup_yes_no("Do you want to close Small Fish ?")
-        if answ == "Yes" : 
-            window.close()
-            quit()
-        else :
-            window.close()
-            return "Cancel", {}
+    window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=True, location=None, enable_close_attempted_event=True)
+    
+    while True :
+        event, values = window.read(timeout=timeout, timeout_key=timeout_key)
+        print(event)
+        if event == sg.WIN_CLOSE_ATTEMPTED_EVENT : 
+            answ = sg.popup_yes_no("Do you want to close Small Fish ?")
+            if answ == "Yes" : 
+                window.close()
+                quit()
+            else :
+                pass
 
-    elif event == 'Cancel' :
-        window.close()
-        return event,{}
-    else : 
-        window.close()
-        return event, values
+        elif event == 'Cancel' or event is None :
+            window.close()
+            return event,{}
+        else : 
+            window.close()
+            return event, values
 
 def input_image_prompt(
         filename_preset : str,

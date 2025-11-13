@@ -828,7 +828,7 @@ class BackgroundRemover(NapariWidget) :
         image_stack : np.ndarray = None, 
         ) :
         
-        self.image_stack : image_stack
+        self.image_stack = image_stack
         self.signal = signal.copy()
         self.voxel_size = voxel_size
         super().__init__()

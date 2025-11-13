@@ -257,9 +257,11 @@ def interactive_detection(
         blending= 'additive'
     )
     
-    if do_background_removal :
+    if True :
+        print("Starting widget creation : ")
         background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
         Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
+        print("Done")
 
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
@@ -275,7 +277,6 @@ def interactive_detection(
             **kwargs
             )
         Viewer.window.add_dock_widget(dense_region_deconvolver.widget, name='dense_region_deconvolver')
-        dense_region_deconvolver.widget() #First occurence with auto or entered threshold.
 
     napari.run()
 
