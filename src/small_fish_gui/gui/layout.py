@@ -217,14 +217,24 @@ def _segmentation_layout(
     layout = [
         [sg.Text("GPU is currently "), sg.Text('ON', text_color= 'green') if USE_GPU else sg.Text('OFF', text_color= 'red')]
         ]
-    
-    #cytoplasm parameters
-    layout += [
-        add_header("Cytoplasm Segmentation"),
-        [sg.Text("Choose parameters for cytoplasm segmentation: \n")],
-                        ]
                         
-    if is_3D_stack : layout += bool_layout(['3D segmentation'], preset=[cytoplasm_segmentation_3D], keys=['cytoplasm_segmentation_3D'],)
+    cyto_radio_2D_seg = sg.Radio("2D segmentation", group_id=1, default=(not cytoplasm_segmentation_3D) or (not is_3D_stack), visible = True)
+    cyto_radio_max_proj = sg.Radio("max proj", group_id=2, default=False, visible = True)
+    cyto_radio_mean_proj = sg.Radio("mean proj", group_id=2, default=True, visible = True)
+    cyto_radio_slice_proj = sg.Radio("select slice", group_id=2, default=False, visible = True)
+    cyto_int_slice_proj = sg.SpinBox(list(range(999)), size= (5,1), visible = True, enabled=False)
+
+    layout += [
+            [radio_2D_seg],
+            [radio_max_proj, radio_mean_proj, radio_slice_proj, int_slice_proj]
+            ]
+
+    if is_3D_stack : 
+        radio_3D_seg = sg.Radio("3D segmentation", group_id=1, default=cytoplasm_segmentation_3D, visible = True)
+        layout += [[radio_3D_seg]]
+                
+        layout += bool_layout(['3D segmentation'], preset=[cytoplasm_segmentation_3D], keys=['cytoplasm_segmentation_3D'],)
+
     if multichannel : layout += parameters_layout(['Cytoplasm channel'],default_values= [cytoplasm_channel_preset], keys = ["cytoplasm_channel"])
 
     layout += [[sg.Text("Cellpose model : ")] + combo_elmt(models_list, key='cyto_model_name', default_value= cytoplasm_model_preset)]
@@ -255,11 +265,6 @@ def _segmentation_layout(
         keys=["flow_threshold_nuc","cellprob_threshold_nuc"],
         tooltips= [FLOW_THRESHOLD_TOOLTIP, CELLPROB_TOOLTIP]
         )
-    if is_3D_stack : layout += parameters_layout(
-        ['anisotropy'], 
-        header = "Model parameters",
-        default_values = [anisotropy]
-        )
 
     #Control plots
     layout += bool_layout(['Show_segmentation'],keys=['show_segmentation'], header= 'Segmentation plots', preset= show_segmentation_preset)
@@ -267,7 +272,17 @@ def _segmentation_layout(
     layout += path_layout(keys=['saving path'], look_for_dir=True, preset=saving_path_preset)
     layout += parameters_layout(['filename'], default_values=[filename_preset], size= 25)
 
-    return layout
+    #Reference dict
+    elmt_ref_dict = {
+        'cyto_radio_2D_seg' : radio_2D_seg ,
+        'cyto_radio_3D_seg' : radio_3D_seg ,
+        'cyto_radio_max_proj' : radio_max_proj ,
+        'cyto_radio_mean_proj' : radio_mean_proj ,
+        'cyto_radio_slice_proj' : radio_slice_proj ,
+        'cyto_int_slice_proj' : int_slice_proj,
+    }
+
+    return layout, elmt_ref_dict
 
 def _input_parameters_layout(
         ask_for_segmentation : bool,
