@@ -1,4 +1,5 @@
 import numpy as np
+import platform
 
 from math import ceil
 from itertools import zip_longest
@@ -14,3 +15,6 @@ def from_label_get_centeroidscoords(label: np.ndarray):
 
     centroid = regionprops_table(label, properties= ["label","centroid"])
     return centroid
+  
+def using_mps():
+    return platform.system() == "Darwin" and torch.backends.mps.is_available()

@@ -25,6 +25,7 @@ import bigfish.plot as plot
 import FreeSimpleGUI as sg
 import matplotlib.pyplot as plt
 import os
+from .utils import using_mps
 
 def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cytoplasm_label) :
     """
@@ -439,11 +440,14 @@ def _segmentate_object(
         anisotropy : float = 1.0,
         flow_threshold : float = 0.4,
         cellprob_threshold : float = 0, 
+        min_size = 15 #Default cellpose
         ) :
+    
 
     model = models.CellposeModel(
         gpu= use_gpu(),
         pretrained_model= model_name,
+        use_bfloat16= not using_mps()
     )
 
     label, flow, style = model.eval(
@@ -455,6 +459,7 @@ def _segmentate_object(
         anisotropy=anisotropy,
         flow_threshold=flow_threshold,
         cellprob_threshold=cellprob_threshold,
+        min_size=min_size,
         )
     
     label = np.array(label, dtype= np.int64)
