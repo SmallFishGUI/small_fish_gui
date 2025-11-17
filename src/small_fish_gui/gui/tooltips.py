@@ -13,3 +13,7 @@ The flow_threshold parameter is the maximum allowed error of the flows for each 
 Increase this threshold if cellpose is not returning as many ROIs as you’d expect. 
 Similarly, decrease this threshold if cellpose is returning too many ill-shaped ROIs.
 """ #Cellpose 4.0.6 doc
+
+MIN_SIZE_TOOLTIP = """ (int) >0 ; pixel
+Default to 15px. Minimum size for predicted regions during cytoplasm or nucleus segmentation. Smaller regions will be discarded.
+"""

@@ -1,10 +1,11 @@
 import FreeSimpleGUI as sg
 import os
+import numpy as np
 import cellpose.models as models
 from typing import Optional, Union
 
 from cellpose.core import use_gpu
-from .tooltips import FLOW_THRESHOLD_TOOLTIP,CELLPROB_TOOLTIP
+from .tooltips import FLOW_THRESHOLD_TOOLTIP,CELLPROB_TOOLTIP, MIN_SIZE_TOOLTIP
 from ..hints import pipeline_parameters
 from ..utils import check_parameter
 from ..interface import SettingsDict, get_default_settings, get_settings
@@ -217,22 +218,51 @@ def _segmentation_layout(
     layout = [
         [sg.Text("GPU is currently "), sg.Text('ON', text_color= 'green') if USE_GPU else sg.Text('OFF', text_color= 'red')]
         ]
-                        
-    cyto_radio_2D_seg = sg.Radio("2D segmentation", group_id=1, default=(not cytoplasm_segmentation_3D) or (not is_3D_stack), visible = True)
-    cyto_radio_max_proj = sg.Radio("max proj", group_id=2, default=False, visible = True)
-    cyto_radio_mean_proj = sg.Radio("mean proj", group_id=2, default=True, visible = True)
-    cyto_radio_slice_proj = sg.Radio("select slice", group_id=2, default=False, visible = True)
-    cyto_int_slice_proj = sg.SpinBox(list(range(999)), size= (5,1), visible = True, enabled=False)
 
-    layout += [
-            [radio_2D_seg],
-            [radio_max_proj, radio_mean_proj, radio_slice_proj, int_slice_proj]
-            ]
+    layout += bool_layout(['Interactive segmentation'],keys=['show_segmentation'], header= 'Segmentation plots', preset= show_segmentation_preset)
+    layout += [[sg.Checkbox("Segment only nuclei", default=segment_only_nuclei_preset, key= "segment_only_nuclei", enable_events=True)]]
 
-    if is_3D_stack : 
+    #NUCLEUS parameters
+    layout += = [[sg.Text("Nucleus segmentation", font="bold 15")]]
+    if is_3D_stack : layout += bool_layout(['3D segmentation'], preset=[nucleus_segmentation_3D], keys=['nucleus_segmentation_3D'],)
+    if multichannel : layout += parameters_layout(['nucleus_channel'], default_values= [nucleus_channel_preset])
+    
+    layout += path_layout(['other_nucleus_image'], preset=other_nucleus_image_preset)
+    layout += [[sg.Text("Cellpose model : ")] + combo_elmt(models_list, key='nucleus_model_name', default_value= nucleus_model_preset)]
+    layout += parameters_layout(['Nucleus diameter'],unit= "px", default_values= [nucleus_diameter_preset], keys=['nucleus_diameter'])
+    layout += parameters_layout(
+        ["Flow threshold", "Cellprob threshold", "min. size (px)"], 
+        default_values=[flow_threshold, cellprob_threshold, nuc_min_size], 
+        keys=["flow_threshold_nuc","cellprob_threshold_nuc", "nuc_min_size"],
+        tooltips= [FLOW_THRESHOLD_TOOLTIP, CELLPROB_TOOLTIP, MIN_SIZE_TOOLTIP]
+        )
+
+    # CYTOPLASM
+    cyto_key_2D = "cyto_radio_2D"
+    cyto_options_2D = list()
+    cyto_key_3D = "cyto_radio_3D"
+    cyto_options_3D = list()
+
+    layout += = [[sg.Text("Cytoplasm segmentation", font="bold 15")]]
+    if is_3D_stack :
+        cyto_radio_2D_seg = sg.Radio("2D segmentation", group_id=1, default=((not cytoplasm_segmentation_3D) or (not is_3D_stack)) or (not is_3D_stack), visible = True, enable_events=True, key=key_2D)
+        cyto_radio_max_proj = sg.Radio("max proj", group_id=2, default=False, visible = True)
+        cyto_radio_mean_proj = sg.Radio("mean proj", group_id=2, default=True, visible = True)
+        cyto_radio_slice_proj = sg.Radio("select slice", group_id=2, default=False, visible = True)
+        cyto_int_slice_proj = sg.Spin(list(range(999)), size= (5,1), visible = True, disabled=False)
+
+        options_2D += [cyto_radio_2D_seg, cyto_radio_max_proj, cyto_radio_mean_proj, cyto_radio_slice_proj, cyto_int_slice_proj]
+        layout += [
+                [cyto_radio_2D_seg],
+                [cyto_radio_max_proj, cyto_radio_mean_proj, cyto_radio_slice_proj, cyto_int_slice_proj]
+                ]
+
         radio_3D_seg = sg.Radio("3D segmentation", group_id=1, default=cytoplasm_segmentation_3D, visible = True)
-        layout += [[radio_3D_seg]]
-                
+        cyto_anisotropy = sg.Spin(values= np.linspace(0.1,10,100), initial_value = 1, key = "cyto_anisotropy")
+
+        layout += [[radio_3D_seg]]  
+        
+        options_3D += []
         layout += bool_layout(['3D segmentation'], preset=[cytoplasm_segmentation_3D], keys=['cytoplasm_segmentation_3D'],)
 
     if multichannel : layout += parameters_layout(['Cytoplasm channel'],default_values= [cytoplasm_channel_preset], keys = ["cytoplasm_channel"])
@@ -240,49 +270,26 @@ def _segmentation_layout(
     layout += [[sg.Text("Cellpose model : ")] + combo_elmt(models_list, key='cyto_model_name', default_value= cytoplasm_model_preset)]
     layout += parameters_layout(['Cytoplasm diameter'], unit= "px", default_values= [cyto_diameter_preset], keys=['cytoplasm_diameter'])
     layout += parameters_layout(
-        ["Flow threshold", "Cellprob threshold"], 
-        default_values=[flow_threshold, cellprob_threshold], 
-        keys=["flow_threshold_cyto","cellprob_threshold_cyto"],
-        tooltips= [FLOW_THRESHOLD_TOOLTIP, CELLPROB_TOOLTIP]
-        )
-
-    #Nucleus parameters
-    layout += [
-            add_header("Nuclei segmentation"),
-            [sg.Text("Choose parameters for nuclei segmentation: \n")],
-                ]
-    
-    layout += path_layout(['other_nucleus_image'], preset=other_nucleus_image_preset)
-    if is_3D_stack : layout += bool_layout(['3D segmentation'], preset=[nucleus_segmentation_3D], keys=['nucleus_segmentation_3D'],)
-    if multichannel : layout += parameters_layout(['nucleus_channel'], default_values= [nucleus_channel_preset])
-    layout += bool_layout(["Segment only nuclei"], preset=segment_only_nuclei_preset, keys=["segment_only_nuclei"])
-    
-    layout += [[sg.Text("Cellpose model : ")] + combo_elmt(models_list, key='nucleus_model_name', default_value= nucleus_model_preset)]
-    layout += parameters_layout(['Nucleus diameter'],unit= "px", default_values= [nucleus_diameter_preset], keys=['nucleus_diameter'])
-    layout += parameters_layout(
-        ["Flow threshold", "Cellprob threshold"], 
-        default_values=[flow_threshold, cellprob_threshold], 
-        keys=["flow_threshold_nuc","cellprob_threshold_nuc"],
-        tooltips= [FLOW_THRESHOLD_TOOLTIP, CELLPROB_TOOLTIP]
+        ["Flow threshold", "Cellprob threshold", "min. size (px)"], 
+        default_values=[flow_threshold, cellprob_threshold, cyto_min_size], 
+        keys=["flow_threshold_cyto","cellprob_threshold_cyto", "cyto_min_size"],
+        tooltips= [FLOW_THRESHOLD_TOOLTIP, CELLPROB_TOOLTIP, MIN_SIZE_TOOLTIP]
         )
 
     #Control plots
-    layout += bool_layout(['Show_segmentation'],keys=['show_segmentation'], header= 'Segmentation plots', preset= show_segmentation_preset)
-    layout += bool_layout(['Save segmentation visual'], preset= save_segmentation_visual_preset, keys=['save_segmentation_visual'])
+    layout += = [[sg.Text("Control plots", font="bold 15")]]
+    layout += bool_layout(['Save png control'], preset= save_segmentation_visual_preset, keys=['save_segmentation_visual'])
     layout += path_layout(keys=['saving path'], look_for_dir=True, preset=saving_path_preset)
     layout += parameters_layout(['filename'], default_values=[filename_preset], size= 25)
 
     #Reference dict
-    elmt_ref_dict = {
-        'cyto_radio_2D_seg' : radio_2D_seg ,
-        'cyto_radio_3D_seg' : radio_3D_seg ,
-        'cyto_radio_max_proj' : radio_max_proj ,
-        'cyto_radio_mean_proj' : radio_mean_proj ,
-        'cyto_radio_slice_proj' : radio_slice_proj ,
-        'cyto_int_slice_proj' : int_slice_proj,
+    event_dict = {
+        cyto_key_2D : cyto_options_2D,
+        cyto_key_3D : cyto_options_3D,
+        "segment_only_nuclei" : 
     }
 
-    return layout, elmt_ref_dict
+    return layout, event_dict
 
 def _input_parameters_layout(
         ask_for_segmentation : bool,

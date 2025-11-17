@@ -464,7 +464,6 @@ def _segmentate_object(
     
     label = np.array(label, dtype= np.int64)
     if not do_3D : label = remove_disjoint(label) # Too much time consuming in 3D
-    else : pass #TODO : filter too litle regions
     
     return label
 
