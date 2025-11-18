@@ -13,13 +13,18 @@ class pipeline_parameters(TypedDict) :
             anisotropy : float
             beta : float
             channel_to_compute : int
-            cellprob_threshold_cyto : float
-            cellprob_threshold_nuc : float
+            cytoplasm_cellprob_threshold : float
+            nucleus_cellprob_threshold : float
             cytoplasm_segmentation_3D : bool
             cluster_size : int
-            cyto_model_name : str
+            cytoplasm_model_name : str
             cytoplasm_diameter : int
             cytoplasm_channel : int
+            cytoplasm_min_size : int
+            cytoplasm_max_proj : bool
+            cytoplasm_mean_proj : bool
+            cytoplasm_select_slice : bool
+            cytoplasm_selected_slice : int
             do_cluster_computation : bool
             do_dense_regions_deconvolution : bool
             do_spots_excel : bool
@@ -28,8 +33,8 @@ class pipeline_parameters(TypedDict) :
             do_background_removal : bool
             dim : int
             filename : str
-            flow_threshold_cyto : int
-            flow_threshold_nuc : int
+            cytoplasm_flow_threshold : int
+            nucleus_flow_threshold : int
             gamma : float
             image_path : str
             image : ndarray
@@ -49,12 +54,18 @@ class pipeline_parameters(TypedDict) :
             nucleus_diameter : int
             nucleus_model_name : str
             nucleus_channel : int
+            nucleus_min_size : int
+            nucleus_max_proj : bool
+            nucleus_mean_proj : bool
+            nucleus_select_slice : bool
+            nucleus_selected_slice : int
             other_nucleus_image : str
             reordered_shape : Tuple[int,int,int,int,int]
             do_segmentation : bool
             shape : Tuple[int,int,int,int,int]
-            save_segmentation_visual : bool
+            save_segmentation_visuals : bool
             segmentation_done : bool
+            seg_control_saving_path : str
             show_interactive_threshold_selector : bool
             spots_extraction_folder : str
             spots_filename : str

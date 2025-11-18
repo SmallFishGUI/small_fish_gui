@@ -13,7 +13,8 @@ from .layout import (
     radio_layout,
     colocalization_layout,
     tuple_layout,
-    _detection_layout
+    _detection_layout,
+    _segmentation_layout
     )
 from ..interface import open_image, check_format, FormatError, get_settings
 
@@ -26,14 +27,13 @@ def prompt(layout, add_ok_cancel=True, timeout=None, timeout_key='TIMEOUT_KEY', 
     if add_ok_cancel : layout += [[sg.Button('Ok', bind_return_key=True), sg.Button('Cancel')]]
 
     size = (800,800)
-    col_elmt = sg.Column(layout, scrollable=True, vertical_scroll_only=True, size=size, expand_x=True, expand_y=True)
+    col_elmt = sg.Column(layout, scrollable=True, vertical_scroll_only=True, size=size, size_subsample_height=1, expand_x=True, expand_y=True)
     layout = [[col_elmt]]
     
     window = sg.Window('small fish', layout=layout, margins=(10,10), size=size, resizable=True, location=None, enable_close_attempted_event=True)
     
     while True :
         event, values = window.read(timeout=timeout, timeout_key=timeout_key)
-        print(event)
         if event == sg.WIN_CLOSE_ATTEMPTED_EVENT : 
             answ = sg.popup_yes_no("Do you want to close Small Fish ?")
             if answ == "Yes" : 
@@ -71,7 +71,8 @@ def input_image_prompt(
     Returns Values
 
     """
-    layout_image_path = path_layout(['image_path'], header= "Image", preset=filename_preset)
+    layout_image_path = [[sg.Text("Open an image", font="Bold 15")]]
+    layout_image_path += path_layout(['image_path'], preset=filename_preset)
     layout_image_path += bool_layout(['3D stack', 'Multichannel stack',],keys= ['is_3D_stack', 'is_multichannel'], preset= [is_3D_stack_preset, multichannel_preset])
     
     if type(do_dense_regions_deconvolution_preset) != type(None) and type(do_clustering_preset) != type(None) and type(do_Napari_correction) != type(None): 
@@ -163,6 +164,61 @@ def detection_parameters_promt(
     if is_3D_stack : values['dim'] = 3
     else : values['dim'] = 2
     return values
+
+def segmentation_prompt(**kwargs) :
+
+    layout, event_dict = _segmentation_layout(**kwargs)
+
+    layout += [[sg.Button("Ok", bind_return_key=True), sg.Button("Cancel")]]
+    layout = [[sg.Column(layout, scrollable=True, vertical_scroll_only=True, size_subsample_height=2, expand_x=True, expand_y=True)]]
+
+    window = sg.Window('small fish', layout=layout, margins=(10,10), size=(800,800), resizable=True, location=None, enable_close_attempted_event=True)
+    while True :
+        event, values = window.read(timeout=300, timeout_key="timeout")
+
+        if event == sg.WIN_CLOSE_ATTEMPTED_EVENT : 
+            answ = sg.popup_yes_no("Do you want to close Small Fish ?")
+            if answ == "Yes" : 
+                window.close()
+                quit()
+            else :
+                pass
+
+        elif event == 'Cancel' or event is None :
+            window.close()
+            return event,{}
+
+        elif event == "timeout" :
+            pass
+        
+        elif event == "Ok" : 
+            window.close()
+            return event, values
+
+        elif event == "segment_only_nuclei" :
+            if event_dict['segment_only_nuclei'].get() : #user wants to segment only nuclei
+                event_dict['cytoplasm_column'].update(visible=False)
+            else :
+                event_dict['cytoplasm_column'].update(visible=True)
+
+        elif "_radio_2D" in event :
+            object_key = event.split("_radio_2D")[0]
+
+            for elmnt_to_enable in event_dict[object_key + "_radio_2D"] :
+                elmnt_to_enable.update(disabled=False)
+            for elmnt_to_disable in event_dict[object_key + "_radio_3D"] :
+                elmnt_to_disable.update(disabled=True)
+
+        elif "_radio_3D" in event : 
+            object_key = event.split("_radio_3D")[0]
+
+            for elmnt_to_enable in event_dict[object_key + "_radio_3D"] :
+                elmnt_to_enable.update(disabled=False)
+            for elmnt_to_disable in event_dict[object_key + "_radio_2D"] :
+                elmnt_to_disable.update(disabled=True)
+
+        else : 
+            raise(AssertionError(f"Not supported event : {event} in segmentation prompt."))
 
 def ask_replace_file(filename:str) :
     layout = [

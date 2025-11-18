@@ -17,7 +17,7 @@ FLOW_THRESHOLD = 0.4
 CELLPROB_THRESHOD = 0.
 CYTO_MODEL = "cpsam"
 NUC_MODEL = "cpsam"
-CYTO_DIAMETER = 90
+CYTOPLASM_DIAMETER = 90
 NUC_DIAMETER = 60
 ANISOTROPY = 1. 
 SHOW_SEGMENTATION = True
@@ -25,6 +25,18 @@ SEGMENT_ONLY_NUCLEI = False
 DO_3D_SEMGENTATION = False
 VISUAL_PATH = os.getcwd()
 SAVE_SEGMENTATION_VISUAL = False
+NUCLEUS_MIN_SIZE = 15
+CYTOPLASM_MIN_SIZE = 15
+CYTOPLASM_max_proj = False
+CYTOPLASM_mean_proj = True
+CYTOPLASM_select_slice = False
+CYTOPLASM_selected_slice = 0
+
+NUCLEUS_MIN_SIZE = 15
+NUCLEUS_max_proj = False
+NUCLEUS_mean_proj = True
+NUCLEUS_select_slice = False
+NUCLEUS_selected_slice = 0
 
 #Detection
 THRESHOLD = None
@@ -64,13 +76,13 @@ def get_default_settings() :
         "nucleus_channel" : NUC_CHANNEL,
         "flow_threshold" : FLOW_THRESHOLD,
         "cellprob_threshold" : CELLPROB_THRESHOD,
-        "cytoplasm_diameter" : CYTO_DIAMETER,
+        "cytoplasm_diameter" : CYTOPLASM_DIAMETER,
         "nucleus_diameter" : NUC_DIAMETER,
         "anisotropy" : ANISOTROPY,
         "cytoplasm_model" : CYTO_MODEL,
         "nucleus_model" : NUC_MODEL,
         "show_segmentation" : SHOW_SEGMENTATION,
-        "only_nuclei" : SEGMENT_ONLY_NUCLEI,
+        "segment_only_nuclei" : SEGMENT_ONLY_NUCLEI,
         "do_3D_segmentation" : DO_3D_SEMGENTATION,
         "save_segmentation_visuals" : SAVE_SEGMENTATION_VISUAL,
         "threshold" : THRESHOLD,
@@ -89,4 +101,14 @@ def get_default_settings() :
         "do_excel" : DO_EXCEL,
         "spot_extraction_folder" : SPOT_EXTRACTION_FOLDER,
         "voxel_size" : VOXEL_SIZE,
+        "nucleus_min_size" : NUCLEUS_MIN_SIZE,
+        "cytoplasm_min_size" : CYTOPLASM_MIN_SIZE,
+        "cytoplasm_max_proj" : CYTOPLASM_max_proj,
+        "cytoplasm_mean_proj" : CYTOPLASM_mean_proj,
+        "cytoplasm_select_slice" : CYTOPLASM_select_slice,
+        "cytoplasm_selected_slice" : CYTOPLASM_selected_slice,
+        "nucleus_max_proj" : NUCLEUS_max_proj,
+        "nucleus_mean_proj" : NUCLEUS_mean_proj,
+        "nucleus_select_slice" : NUCLEUS_select_slice,
+        "nucleus_selected_slice" : NUCLEUS_selected_slice,
     }

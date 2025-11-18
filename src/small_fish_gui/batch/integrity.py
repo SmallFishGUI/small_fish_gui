@@ -124,7 +124,7 @@ def check_detection_parameters(
             values=values,
             do_dense_region_deconvolution=do_dense_region_deconvolution,
             do_clustering=do_clustering,
-            multichannel=is_multichannel,
+            is_multichannel=is_multichannel,
             segmentation_done= values['do_segmentation'],
             map_=map_,
             shape=shape

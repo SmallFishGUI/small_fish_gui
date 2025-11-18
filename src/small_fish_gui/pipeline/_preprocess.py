@@ -68,20 +68,20 @@ def map_channels(user_parameters) :
     image = user_parameters['image']
     is_3D_stack = user_parameters['is_3D_stack']
     is_time_stack = False
-    multichannel = user_parameters['is_multichannel']
+    is_multichannel = user_parameters['is_multichannel']
 
     try : 
-        map_ = _auto_map_channels(is_3D_stack, is_time_stack, multichannel, image=image)
+        map_ = _auto_map_channels(is_3D_stack, is_time_stack, is_multichannel, image=image)
     except MappingError as e :
         sg.popup("Automatic dimension mapping went wrong. Please indicate dimensions positions in the array.")
-        map_ = _ask_channel_map(image.shape, is_3D_stack, is_time_stack, multichannel, preset_map= e.get_map())
+        map_ = _ask_channel_map(image.shape, is_3D_stack, is_time_stack, is_multichannel, preset_map= e.get_map())
 
     else :
-        map_ = _show_mapping(image.shape, map_, is_3D_stack, is_time_stack, multichannel,)
+        map_ = _show_mapping(image.shape, map_, is_3D_stack, is_time_stack, is_multichannel,)
 
     return map_
 
-def _auto_map_channels(is_3D_stack, is_time_stack, multichannel, image: np.ndarray=None, shape=None) :
+def _auto_map_channels(is_3D_stack, is_time_stack, is_multichannel, image: np.ndarray=None, shape=None) :
     if type(shape) == type(None) :
         shape = image.shape
     reducing_list = list(shape)
@@ -102,7 +102,7 @@ def _auto_map_channels(is_3D_stack, is_time_stack, multichannel, image: np.ndarr
     reducing_list.remove(x_val)
 
     #smaller value set to c
-    if multichannel :
+    if is_multichannel :
         c_val = min(reducing_list)
         c_idx = shape.index(c_val)
         map_['c'] = c_idx
@@ -126,7 +126,7 @@ def _auto_map_channels(is_3D_stack, is_time_stack, multichannel, image: np.ndarr
 
     return map_
 
-def _ask_channel_map(shape, is_3D_stack, is_time_stack, multichannel, preset_map: dict= {}) :
+def _ask_channel_map(shape, is_3D_stack, is_time_stack, is_multichannel, preset_map: dict= {}) :
     while True :
         relaunch = False
         save_preset = preset_map.copy()
@@ -140,7 +140,7 @@ def _ask_channel_map(shape, is_3D_stack, is_time_stack, multichannel, preset_map
         layout = _ask_channel_map_layout(
             is_3D_stack=is_3D_stack,
             is_time_stack=False,
-            multichannel=multichannel,
+            is_multichannel=is_multichannel,
             shape=shape,
             preset_map=preset_map
         )
@@ -162,7 +162,7 @@ def _ask_channel_map(shape, is_3D_stack, is_time_stack, multichannel, preset_map
 
     return preset_map
 
-def _show_mapping(shape, map_, is_3D_stack, is_time_stack, multichannel) :
+def _show_mapping(shape, map_, is_3D_stack, is_time_stack, is_multichannel) :
     while True : 
         layout = [
             [sg.Text("Image shape : {0}".format(shape))],
@@ -178,7 +178,7 @@ def _show_mapping(shape, map_, is_3D_stack, is_time_stack, multichannel) :
         if event == 'Ok' :
             return map_
         elif event == 'Change mapping':
-            map_ = _ask_channel_map(shape, is_3D_stack, is_time_stack, multichannel, preset_map=map_)
+            map_ = _ask_channel_map(shape, is_3D_stack, is_time_stack, is_multichannel, preset_map=map_)
         elif event == 'Cancel' : 
             return None
         else : raise AssertionError('Unforseen event')
@@ -232,7 +232,7 @@ def check_integrity(
         values: dict, 
         do_dense_region_deconvolution,
         do_clustering, 
-        multichannel,
+        is_multichannel,
         segmentation_done, 
         map_, 
         shape
@@ -268,7 +268,7 @@ def check_integrity(
             raise ParameterInputError("Incorrect cluster size parameter.")
 
     #channel
-    if multichannel :
+    if is_multichannel :
         ch_len = shape[int(map_['c'])]
 
         if type(segmentation_done) == type(None) :
@@ -319,7 +319,7 @@ def _check_segmentation_parameters(
 
     available_channels = list(range(len(shape)))
     do_only_nuc = user_parameters['segment_only_nuclei']
-    cyto_model_name = user_parameters['cyto_model_name']
+    cytoplasm_model_name = user_parameters['cytoplasm_model_name']
     cyto_size = user_parameters['cytoplasm_diameter']
     cytoplasm_channel = user_parameters['cytoplasm_channel']
     nucleus_model_name = user_parameters['nucleus_model_name']
@@ -327,7 +327,7 @@ def _check_segmentation_parameters(
     nucleus_channel = user_parameters['nucleus_channel']
    
 
-    if type(cyto_model_name) != str  and not do_only_nuc:
+    if type(cytoplasm_model_name) != str  and not do_only_nuc:
         raise ParameterInputError('Invalid cytoplasm model name.')
     if cytoplasm_channel not in available_channels and not do_only_nuc and is_multichannel:
         raise ParameterInputError('For given input image please select channel in {0}\ncytoplasm_channel : {1}'.format(available_channels, cytoplasm_channel))

@@ -101,8 +101,8 @@ def batch_pipeline(
                 parameters = _cast_segmentation_parameters(parameters)
                 cytoplasm_label, nucleus_label = cell_segmentation(
                     im_seg,
-                    cyto_model_name= parameters['cyto_model_name'],
-                    cyto_diameter= parameters['cytoplasm_diameter'],
+                    cytoplasm_model_name= parameters['cytoplasm_model_name'],
+                    cytoplasm_diameter= parameters['cytoplasm_diameter'],
                     nucleus_model_name= parameters['nucleus_model_name'],
                     nucleus_diameter= parameters['nucleus_diameter'],
                     channels=[parameters['cytoplasm_channel'], parameters['nucleus_channel']],
@@ -110,10 +110,10 @@ def batch_pipeline(
                     nucleus_3D_segmentation=parameters['nucleus_segmentation_3D'],
                     cyto_3D_segmentation= parameters['cytoplasm_segmentation_3D'],
                     do_only_nuc=parameters['segment_only_nuclei'],
-                    flow_threshold_cyto=parameters['flow_threshold_cyto'],
-                    flow_threshold_nuc=parameters['flow_threshold_cyto'],
-                    cellprob_threshold_cyto=parameters['cellprob_threshold_cyto'],
-                    cellprob_threshold_nuc=parameters['cellprob_threshold_nuc'],
+                    cytoplasm_flow_threshold=parameters['cytoplasm_flow_threshold'],
+                    nucleus_flow_threshold=parameters['cytoplasm_flow_threshold'],
+                    cytoplasm_cellprob_threshold=parameters['cytoplasm_cellprob_threshold'],
+                    nucleus_cellprob_threshold=parameters['nucleus_cellprob_threshold'],
                     )
 
                 parameters['segmentation_done'] = True

@@ -14,14 +14,16 @@ from .pipeline.actions import delete_acquisitions, rename_acquisitions
 from .pipeline.actions import save_segmentation, load_segmentation, segment_cells
 from .pipeline.actions import open_wiki
 from .pipeline.actions import open_settings
-
 from .pipeline._preprocess import clean_unused_parameters_cache
+
+from .interface import get_default_settings
 from .batch import batch_promp
 from .gui import hub_prompt, prompt_restore_main_menu, default_theme
 from .hints import pipeline_parameters
 
 #'Global' parameters
 user_parameters = pipeline_parameters({'segmentation_done' : False}) #TypedDict
+user_parameters.update(get_default_settings())
 acquisition_id = -1
 result_df = pd.DataFrame(columns=['acquisition_id', 'name'])
 cell_result_df = pd.DataFrame(columns=['acquisition_id'])

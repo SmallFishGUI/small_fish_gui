@@ -832,7 +832,7 @@ class BackgroundRemover(NapariWidget) :
         self.signal = signal.copy()
         self.voxel_size = voxel_size
         super().__init__()
-        if self.image_stack is None : self.disable_channel() #Image stack is None when image stack is not multichannel
+        if self.image_stack is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
 
 
     def disable_channel(self) :

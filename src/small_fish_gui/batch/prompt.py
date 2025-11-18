@@ -75,7 +75,7 @@ def batch_promp(
         shape=(0,1,2,3,4),
         is_3D_stack=True,
         is_time_stack=True,
-        multichannel=True,
+        is_multichannel=True,
     )
     last_shape_read = sg.Text("Last shape read : None")
     auto_map = sg.Button("auto-map", disabled=True, pad=(10,0))
@@ -86,15 +86,15 @@ def batch_promp(
 
     #Segmentation tab
     segmentation_layout = _segmentation_layout(
-        multichannel=True,
+        is_multichannel=True,
         is_3D_stack=True, 
-        cytoplasm_model_preset=preset.setdefault("cyto_model_name",default.cytoplasm_model),
+        cytoplasm_model_preset=preset.setdefault("cytoplasm_model_name",default.cytoplasm_model),
         cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",default.detection_channel),
-        cyto_diameter_preset=preset.setdefault("cytoplasm_diameter",default.cytoplasm_diameter),
+        cytoplasm_diameter_preset=preset.setdefault("cytoplasm_diameter",default.cytoplasm_diameter),
         nucleus_model_preset=preset.setdefault("nucleus_model_name",default.nucleus_model),
         nucleus_channel_preset=preset.setdefault("nucleus channel",default.nucleus_channel),
         nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.nucleus_diameter),
-        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.only_nuclei),
+        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.segment_only_nuclei),
         filename_preset="",
         cytoplasm_segmentation_3D= preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation),
         nucleus_segmentation_3D=preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation),
@@ -109,7 +109,7 @@ def batch_promp(
     
     apply_segmentation_button = sg.Button('apply', key='apply-segmentation')
     segmentation_layout += [[apply_segmentation_button]]
-    seg_keys_to_hide = ['show_segmentation', 'saving path', 'filename', 'other_nucleus_image', 'save_segmentation_visual', 'saving path_browse']
+    seg_keys_to_hide = ['show_segmentation', 'saving path', 'filename', 'other_nucleus_image', 'save_segmentation_visuals', 'saving path_browse']
     segmentation_tab = sg.Tab("Segmentation", segmentation_layout, visible=False)
 
     #Detection tab
@@ -131,7 +131,7 @@ def batch_promp(
     apply_output_button = sg.Button('apply', key='apply-output')
     save_segmentation_visual_box = sg.Checkbox("save segmentation", disabled=True, key='save segmentation', tooltip= "Save png files illustrating segmentation borders.")
     save_segmentation_masks_box = sg.Check("save labels",  disabled=True, key="save_masks", tooltip= "Save segmentation labels as .npy files.")
-    save_detection_box = sg.Checkbox("create spot detection visuals", key= 'save detection', tooltip="Create multichannel tiff with raw spot signal and detected spots.\nWarning if processing a lot of files make sure you have enough free space on your hard drive.")
+    save_detection_box = sg.Checkbox("create spot detection visuals", key= 'save detection', tooltip="Create is_multichannel tiff with raw spot signal and detected spots.\nWarning if processing a lot of files make sure you have enough free space on your hard drive.")
     extract_spots_box = sg.Checkbox("extract spots", key='extract spots')
     batch_name_input = sg.InputText(size=25, key='batch_name')
     output_layout=[

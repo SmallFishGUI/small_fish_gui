@@ -24,7 +24,7 @@ def call_auto_map(
         map_ = _auto_map_channels(
             is_3D_stack=is_3D,
             is_time_stack=False,
-            multichannel=is_multichannel,
+            is_multichannel=is_multichannel,
             image=None,
             shape=shape
             )

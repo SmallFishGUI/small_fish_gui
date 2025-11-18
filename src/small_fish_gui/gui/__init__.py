@@ -14,6 +14,7 @@ from .prompts import ask_cancel_detection
 from .prompts import ask_cancel_segmentation
 from .prompts import ask_detection_confirmation
 from .prompts import prompt_restore_main_menu
+from .prompts import segmentation_prompt
 
 #Helpers to build windows
 from .layout import parameters_layout 

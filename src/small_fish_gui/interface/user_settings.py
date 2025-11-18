@@ -19,11 +19,21 @@ class SettingsDict(BaseModel) :
     flow_threshold : float
     cellprob_threshold : float
     cytoplasm_diameter : int
+    cytoplasm_min_size : int
+    cytoplasm_max_proj : bool
+    cytoplasm_mean_proj : bool
+    cytoplasm_select_slice : bool
+    cytoplasm_selected_slice : int
     nucleus_diameter : int
     cytoplasm_model : str
     nucleus_model : str
+    nucleus_min_size : int
+    nucleus_max_proj : bool
+    nucleus_mean_proj : bool
+    nucleus_select_slice : bool
+    nucleus_selected_slice : int
     show_segmentation : bool
-    only_nuclei : bool
+    segment_only_nuclei : bool
     do_3D_segmentation : bool
     save_segmentation_visuals : bool
     threshold : Optional[int]
@@ -42,6 +52,7 @@ class SettingsDict(BaseModel) :
     do_excel : bool
     spot_extraction_folder : str
     voxel_size : tuple
+    
 
 
 def get_settings() -> SettingsDict :
