@@ -246,6 +246,7 @@ def interactive_detection(
     
     assert any([interactive_threshold, do_background_removal, dense_region_deconvolution]), "Wrong code path"
 
+
     Viewer = napari.Viewer(title= "Small fish - Threshold selector", ndisplay=2, show=True)
     scale = compute_anisotropy_coef(voxel_size)
     image_layer = Viewer.add_image(
@@ -258,10 +259,8 @@ def interactive_detection(
     )
     
     if True :
-        print("Starting widget creation : ")
         background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
         Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
-        print("Done")
 
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
@@ -345,7 +344,7 @@ def _interactive_background_removal(image : np.ndarray, voxel_size : tuple, **kw
     background_remover = BackgroundRemover(
         signal= image,
         voxel_size = voxel_size,
-        image_stack= kwargs.get('image_stack'),
+        other_image = kwargs.get('other_image'),
     )
 
     return background_remover

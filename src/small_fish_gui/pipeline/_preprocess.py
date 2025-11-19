@@ -38,7 +38,6 @@ def prepare_image_detection(map_, user_parameters) :
         channel_to_compute = user_parameters['channel_to_compute']
         other_image = image.copy()
         other_image = np.delete(other_image, channel_to_compute, axis=0)
-        other_image = [layer for layer in other_image]
         image: np.ndarray = image[channel_to_compute]
 
     else :

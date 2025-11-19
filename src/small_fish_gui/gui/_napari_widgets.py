@@ -825,14 +825,14 @@ class BackgroundRemover(NapariWidget) :
         self, 
         signal : Image, 
         voxel_size : tuple,
-        image_stack : np.ndarray = None, 
+        other_image : np.ndarray = None, 
         ) :
         
-        self.image_stack = image_stack
+        self.other_image = other_image
         self.signal = signal.copy()
         self.voxel_size = voxel_size
         super().__init__()
-        if self.image_stack is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
+        if self.other_image is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
 
 
     def disable_channel(self) :
@@ -840,14 +840,14 @@ class BackgroundRemover(NapariWidget) :
 
     def _create_widget(self) :
         @magicgui(
-            channel = {'min' : 0, 'max' : self.image_stack.shape[0] - 1},
+            channel = {'min' : 0, 'max' : self.other_image.shape[0] - 1 },
             max_trial = {'min' : 0},
         )
         def remove_background(
             background_path : Path,
             channel : int,
-            max_trial : int,
-            reset : bool
+            reset : bool,
+            max_trial : int = 100,
         )-> LayerDataTuple :
 
             self.gui = remove_background
@@ -857,10 +857,10 @@ class BackgroundRemover(NapariWidget) :
             else :
                 if os.path.isfile(background_path) :
                     background = open_image(background_path)
-                elif self.image_stack is None :
+                elif self.other_image is None :
                     raise FileNotFoundError(f"{background_path} is not a valid file.")
                 else :
-                    background = self.image_stack[channel]
+                    background = self.other_image[channel]
                 if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
 
                 result, score = remove_autofluorescence_RANSACfit(
@@ -869,6 +869,7 @@ class BackgroundRemover(NapariWidget) :
                     max_trials=max_trial
                 )
 
+            scale = compute_anisotropy_coef(self.voxel_size)
             signal_args = {
                 "contrast_limits" : [result.min(), result.max()],
                 "name" : "raw signal",
