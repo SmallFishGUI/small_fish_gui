@@ -118,6 +118,7 @@ def path_layout(keys= [],look_for_dir = False, header=None, preset=settings.work
     if len(keys) == 0 : return []
     check_parameter(keys= list, header = (str, type(None)))
     for key in keys : check_parameter(key = str)
+    
     if look_for_dir : Browse = sg.FolderBrowse
     else : Browse = sg.FileBrowse
 
@@ -193,7 +194,6 @@ def radio_layout(values, header=None, key=None) :
     return layout
 
 def _segmentation_layout(
-        image : np.ndarray,
         is_multichannel : bool,
         is_3D_stack : bool,
         cytoplasm_model,
@@ -215,6 +215,7 @@ def _segmentation_layout(
         anisotropy,
         cytoplasm_min_size : int,
         nucleus_min_size : int,
+        reordered_shape : tuple,
         **kwargs
         ) :
     
@@ -234,6 +235,7 @@ def _segmentation_layout(
     nucleus_key = "nucleus"
     layout += [[sg.Text("Nucleus parameters", font="bold 15", pad=(0,10))]]
     nucleus_parameters_col, nucleus_event_dict = _segmentate_object_layout(
+        reordered_shape = reordered_shape,
         anisotropy=anisotropy,
         cellprob_threshold=cellprob_threshold,
         channel=nucleus_channel,
@@ -246,10 +248,8 @@ def _segmentation_layout(
         segmentation_3D=nucleus_segmentation_3D,
         min_size=nucleus_min_size
     )
-    layout += [
-        [path_layout(keys="other_nucleus_image", look_for_dir=False, preset=other_nucleus_image)]
-        [nucleus_parameters_col]
-        ]
+    layout += path_layout(keys=["other_nucleus_image"], look_for_dir=False, preset=other_nucleus_image)
+    layout += [[nucleus_parameters_col]]
     event_dict.update(nucleus_event_dict)
     event_dict[nucleus_key + "_column"] = nucleus_parameters_col
 
@@ -258,7 +258,7 @@ def _segmentation_layout(
     layout += [[sg.Text("Cytoplasm parameters", font="bold 15", pad=(0,10))]]
     cytoplasm_key = "cytoplasm"
     cytoplasm_parameters_col, cytoplasm_event_dict = _segmentate_object_layout(
-        image= image,
+        reordered_shape = reordered_shape,
         anisotropy=anisotropy,
         cellprob_threshold=cellprob_threshold,
         channel=cytoplasm_channel,
@@ -279,12 +279,12 @@ def _segmentation_layout(
     layout += [[sg.Text("Control plots", font="bold 15", pad=(0,10))]]
     layout += bool_layout(['Save png control'], preset= save_segmentation_visuals, keys=['save_segmentation_visuals'])
     layout += path_layout(keys=['seg_control_saving_path'], look_for_dir=True, preset=saving_path)
-    layout += parameters_layout(['Filename'], default_values=[filename], size= 25)
+    layout += parameters_layout(['Filename'], default_values=[filename], size= 25, keys=['filename'])
 
     return layout, event_dict
 
 def _segmentate_object_layout(
-    image : np.ndarray,
+    reordered_shape : tuple,
     object_key : str,     
     is_multichannel : bool,
     is_3D_stack : bool,
@@ -314,8 +314,8 @@ def _segmentate_object_layout(
         radio_mean_proj = sg.Radio("mean proj", group_id=object_key+"_2D_proj", default=True, disabled= segmentation_3D, key = object_key + "_mean_proj")
         radio_slice_proj = sg.Radio("select slice", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key=object_key + "_select_slice")
         
-        print(image.shape)
-        int_slice_proj = sg.Spin(list(range(999)), size= (5,1), disabled= segmentation_3D, key=object_key+"_selected_slice")
+        slice_number = reordered_shape[0 + is_multichannel]
+        int_slice_proj = sg.Spin(list(range(slice_number)), size= (5,1), disabled= segmentation_3D, key=object_key+"_selected_slice")
 
         options_2D += [
             radio_max_proj, 

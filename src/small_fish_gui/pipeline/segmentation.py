@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 import os
 from .utils import using_mps
 
-def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cytoplasm_label) :
+def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cytoplasm_label, batch_mode=False) :
     """
     Ask user for necessary parameters and perform cell segmentation (cytoplasm + nucleus) with cellpose.
 
@@ -40,7 +40,7 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
         cytoplasm_label, nucleus_label, user_parameters
     """
 
-    segmentation_parameters = user_parameters.copy()
+    segmentation_parameters : pipeline_parameters = user_parameters.copy()
     default = get_settings()
 
     #Ask for image parameters
@@ -56,21 +56,24 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
     segmentation_parameters['reordered_shape'] = reorder_shape(segmentation_parameters['shape'], map_)
     image = reorder_image_stack(map_, segmentation_parameters['image'])
 
+    is_multichannel = segmentation_parameters["is_multichannel"]
+    is_3D_stack = segmentation_parameters["is_3D_stack"]
+
     while True : # Loop if show_segmentation 
         #Default parameters
         path = os.getcwd()
         available_channels = list(range(image.shape[0]))
+        available_slices = list(range(image.shape[is_multichannel])) #0 if not multichannel else 1
 
     #Ask user for parameters
     #if incorrect parameters --> set relaunch to True
         while True :
+            segmentation_parameters.setdefault("other_nucleus_image", segmentation_parameters["working_directory"])
+            segmentation_parameters.setdefault("cytoplasm_channel", segmentation_parameters["detection_channel"])
             event, values = segmentation_prompt(
-                image = image,
-                cytoplasm_channel= user_parameters['detection_channel'],
-                other_nucleus_image = user_parameters.setdefault("other_nucleus_image", user_parameters["working_directory"]),
-                saving_path= user_parameters.setdefault("seg_control_saving_path", user_parameters["working_directory"]),
-                cytoplasm_segmentation_3D= user_parameters["do_3D_segmentation"],
-                nucleus_segmentation_3D= user_parameters["do_3D_segmentation"],
+                saving_path= segmentation_parameters.setdefault("seg_control_saving_path", segmentation_parameters["working_directory"]),
+                cytoplasm_segmentation_3D= segmentation_parameters["do_3D_segmentation"],
+                nucleus_segmentation_3D= segmentation_parameters["do_3D_segmentation"],
                 **segmentation_parameters
                 )
 
@@ -83,159 +86,27 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
                     continue
 
             #Extract parameters
-            values : pipeline_parameters = _cast_segmentation_parameters(values)
-
-            relaunch= False
-            #Checking integrity of parameters
-
-            #Min size
-            if not isinstance(values["cytoplasm_min_size"], int) :
-                relaunch=True
-                sg.popup("Invalid value for cytoplasm min size parameter, must be a positive int.")
-                values["cytoplasm_min_size"] = user_parameters["cytoplasm_min_size"]
-            if not isinstance(values["nucleus_min_size"], int) :
-                relaunch=True
-                sg.popup("Invalid value for nucleus min size parameter, must be a positive int.")
-                values["nucleus_min_size"] = user_parameters["nucleus_min_size"]
-
-            #anisotropy
-            if not isinstance(values["nucleus_anisotropy"], (float, int)) :
-                relaunch=True
-                sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
-                values["anisotropy"] = user_parameters["anisotropy"]
-            elif values["nucleus_anisotropy"] < 0 :
-                relaunch=True
-                sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
-                values["anisotropy"] = user_parameters["anisotropy"]
-
-            if not values["segment_only_nuclei"] :
-                if not isinstance(values["cytoplasm_anisotropy"], (float, int)) :
-                    relaunch=True
-                    sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
-                    values["anisotropy"] = user_parameters["anisotropy"]
-                elif values["cytoplasm_anisotropy"] < 0 :
-                    relaunch=True
-                    sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
-                    values["anisotropy"] = user_parameters["anisotropy"]
-
-            if values["segment_only_nuclei"] :
-                values["anisotropy"] = values["nucleus_anisotropy"]
-            elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and isinstance(values["nucleus_anisotropy"], (float, int)):
-                if not values["cytoplasm_anisotropy"] ==values["nucleus_anisotropy"] :
-                    relaunch=True
-                    sg.popup("Anisotropy must be equal for nucleus and cytoplasm segmentation")
-            else :
-                values["anisotropy"] = values["nucleus_anisotropy"]
-
-            #flow thresholds
-            if type(values['nucleus_flow_threshold']) != float : 
-                sg.popup('Invalid value for flow threshold in nuc parameters, must be a float between 0 and 1.')
-                values['nucleus_flow_threshold'] = user_parameters['nucleus_flow_threshold']
-                relaunch= True
-            if type( values['cytoplasm_flow_threshold']) != float : 
-                sg.popup('Invalid value for flow threshold in cyto parameters, must be a float between 0 and 1.')
-                values['cytoplasm_flow_threshold'] = user_parameters['cytoplasm_flow_threshold']
-                relaunch= True
-            
-            #cellprob thresholds
-            if type(values['nucleus_cellprob_threshold']) != float : 
-                sg.popup('Invalid value for cellprob threshold in nuc parameters, must be a float between -3 and +3.')
-                values['nucleus_cellprob_threshold'] = user_parameters['nucleus_cellprob_threshold']
-                relaunch= True
-            if type(values['cytoplasm_cellprob_threshold']) != float : 
-                sg.popup('Invalid value for cellprob threshold in cyto parameters, must be a float between -3 and +3.')
-                values['cytoplasm_cellprob_threshold'] = user_parameters['cytoplasm_cellprob_threshold']
-                relaunch= True
-            
-            #Models
-            if type(values["cytoplasm_model_name"]) != str  and not do_only_nuc:
-                sg.popup('Invalid cytoplasm model name.')
-                values['cytoplasm_model_name'] = user_parameters['cytoplasm_model_name']
-                relaunch= True
-            if is_multichannel :
-                if values["cytoplasm_channel"] not in available_channels and not do_only_nuc:
-                    sg.popup('For given input image please select channel in {0}\ncytoplasm_channel : {1}'.format(available_channels, cytoplasm_channel))
-                    relaunch= True
-                    values['cytoplasm_channel'] = user_parameters['cytoplasm_channel']
-            else :
-                cytoplasm_channel = ...
-
-            if is_3D_stack :
-                if not isinstance(values["anisotropy"], (float,int)) :
-                    sg.popup("Anisotropy must be a positive float.")
-                    relaunch = True
-                    values['anisotropy'] = user_parameters['anisotropy']
-
-            if type(values["cytoplasm_diameter"]) not in [int, float] and not do_only_nuc:
-                sg.popup("Incorrect cytoplasm size.")
-                relaunch= True
-                values['cytoplasm_diameter'] = user_parameters['cytoplasm_diameter']
-
-            if type(values["nucleus_model_name"]) != str :
-                sg.popup('Invalid nucleus model name.')
-                values['nucleus_model_name'] = user_parameters['nucleus_model_name']
-                relaunch= True
-            
-            if is_multichannel :
-                if values["nucleus_channel"] not in available_channels :
-                    sg.popup('For given input image please select channel in {0}\nnucleus channel : {1}'.format(available_channels, nucleus_channel))
-                    relaunch= True
-                    values['nucleus_channel'] = user_parameters['nucleus_channel']
-            else : 
-                values["nucleus_channel"] = ...
-
-            if type(values["nucleus_diameter"]) not in [int, float] :
-                sg.popup("Incorrect nucleus size.")
-                relaunch= True
-                values['nucleus_diameter'] = user_parameters['nucleus_diameter']
-
-            if values["other_nucleus_image"] != '' :
-                if not os.path.isfile(values["other_nucleus_image"]) :
-                    sg.popup("Nucleus image is not a file.")
-                    relaunch=True
-                    values['other_nucleus_image'] = None
-                else :
-                    try :
-                        nucleus_image = open_image(other_nucleus_image)
-                    except Exception as e :
-                        sg.popup("Could not open image.\n{0}".format(e))
-                        relaunch=True
-                        values['other_nucleus_image'] = user_parameters['other_nucleus_image']
-                    else :
-                        if nucleus_image.ndim != image.ndim - is_multichannel :
-                            sg.popup("Nucleus image dimension missmatched. Expected same dimension as cytoplasm_image for monochannel or same dimension as cytoplasm_image -1 for is_multichannel\ncytoplasm dimension : {0}, nucleus dimension : {1}".format(image.ndim, nucleus_image.ndim))
-                            nucleus_image = None
-                            relaunch=True
-                            values['other_nucleus_image'] = user_parameters['other_nucleus_image']
-                        
-                        elif nucleus_image.shape != image[cytoplasm_channel].shape :
-                            sg.popup("Nucleus image shape missmatched. Expected same shape as cytoplasm_image \ncytoplasm shape : {0}, nucleus shape : {1}".format(image[cytoplasm_channel].shape, nucleus_image.shape))
-                            nucleus_image = None
-                            relaunch=True
-                            values['other_nucleus_image'] = user_parameters['other_nucleus_image']
-
-            else :
-                nucleus_image = None
-
-            user_parameters.update(values)
+            values, relaunch = _check_integrity_segmentation_parameters(values, segmentation_parameters, available_channels=available_channels, available_slices=available_slices)
+            segmentation_parameters.update(values)
             if not relaunch : break
 
-        #Launching segmentation
-        waiting_layout = [
-            [sg.Text("Running segmentation...")]
-        ]
-        window = sg.Window(
-            title= 'small_fish',
-            layout= waiting_layout,
-            grab_anywhere= True,
-            no_titlebar= False
-        )
+        if not batch_mode :
+            #Launching segmentation
+            waiting_layout = [
+                [sg.Text("Running segmentation...")]
+            ]
+            window = sg.Window(
+                title= 'small_fish',
+                layout= waiting_layout,
+                grab_anywhere= True,
+                no_titlebar= False
+            )
 
-        window.read(timeout= 30, close= False)
+            window.read(timeout= 30, close= False)
 
         try :
-            if type(path) != type(None) and filename != '':
-                output_path = path + '/' + filename
+            if type(segmentation_parameters["seg_control_saving_path"]) != type(None) and segmentation_parameters["filename"] != '':
+                output_path = path + '/' + segmentation_parameters["filename"]
                 nuc_path = output_path + "_nucleus_segmentation"
                 cyto_path = output_path + "_cytoplasm_segmentation"
             else :
@@ -245,32 +116,25 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
 
             cytoplasm_label, nucleus_label = cell_segmentation(
                 image,
-                cytoplasm_model_name= cytoplasm_model_name,
-                cytoplasm_diameter= cyto_size,
-                nucleus_model_name= nucleus_model_name,
-                nucleus_diameter= nucleus_size,
-                channels=channels,
-                do_only_nuc=do_only_nuc,
-                external_nucleus_image = nucleus_image,
-                anisotropy=anisotropy,
-                nucleus_3D_segmentation=nucleus_segmentation_3D,
-                cyto_3D_segmentation=cytoplasm_segmentation_3D,
-                cytoplasm_cellprob_threshold=cytoplasm_cellprob_threshold,
-                nucleus_cellprob_threshold=nucleus_cellprob_threshold,
-                cytoplasm_flow_threshold=cytoplasm_flow_threshold,
-                nucleus_flow_threshold=nucleus_flow_threshold,
-
+                channels=[segmentation_parameters["cytoplasm_channel"], segmentation_parameters["nucleus_channel"]],
+                do_only_nuc=segmentation_parameters["segment_only_nuclei"],
+                external_nucleus_image = segmentation_parameters["other_nucleus_image"],
+                nucleus_3D_segmentation=segmentation_parameters["nucleus_segmentation_3D"],
+                cyto_3D_segmentation=segmentation_parameters["cytoplasm_segmentation_3D"],
+                **segmentation_parameters
                 )
 
-        finally  : window.close()
+        finally  : 
+            if not batch_mode : window.close()
 
-        if show_segmentation :
+        if segmentation_parameters["show_segmentation"] :
+            
             nucleus_label, cytoplasm_label = napari_show_segmentation(
-                nuc_image=image[nucleus_channel] if type(nucleus_image) == type(None) else nucleus_image,
+                nuc_image=image[segmentation_parameters["nucleus_channel"]] if type(segmentation_parameters["other_nucleus_image"]) == type(None) else segmentation_parameters["other_nucleus_image"],
                 nuc_label= nucleus_label,
-                cyto_image=image[cytoplasm_channel],
+                cyto_image=image[segmentation_parameters["cytoplasm_channel"]],
                 cyto_label=cytoplasm_label,
-                anisotrpy=anisotropy,
+                anisotrpy=segmentation_parameters["anisotropy"],
             )
 
             if nucleus_label.ndim == 3 : nucleus_label = np.max(nucleus_label, axis=0)
@@ -285,17 +149,17 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             if event == "No" :
                 continue
 
-        if type(output_path) != type(None) and save_segmentation_visuals:
+        if type(segmentation_parameters["seg_control_saving_path"]) != type(None) and segmentation_parameters["save_segmentation_visuals"]:
             
             #Get backgrounds
-            nuc_proj = image[nucleus_channel]
-            im_proj = image[cytoplasm_channel]
+            nuc_proj = image[segmentation_parameters["nucleus_channel"]]
+            im_proj = image[segmentation_parameters["cytoplasm_channel"]]
             if im_proj.ndim == 3 :
                 im_proj = stack.mean_projection(im_proj)
             if nuc_proj.ndim == 3 :
                 nuc_proj = stack.mean_projection(nuc_proj)
             if nucleus_label.ndim == 3 :
-                nucleus_label_proj = np.max(nucleus_channel,axis=0)
+                nucleus_label_proj = np.max(segmentation_parameters["nucleus_channel"],axis=0)
             else : 
                 nucleus_label_proj = nucleus_label
             if cytoplasm_label.ndim == 3 :
@@ -327,15 +191,13 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             [sg.Text("No cell segmented. Proceed anyway ?")],
             [sg.Button("Yes"), sg.Button("No")]
         ]
-            event, values = prompt(layout=layout, add_ok_cancel=False)
+            event, _ = prompt(layout=layout, add_ok_cancel=False)
             if event == "Yes" :
                 return None, None, user_parameters
         else :
             break
 
-
-        
-    user_parameters.update(values)
+    user_parameters.update(segmentation_parameters)
     return nucleus_label, cytoplasm_label, user_parameters
 
 def cell_segmentation(
@@ -352,6 +214,7 @@ def cell_segmentation(
         cytoplasm_cellprob_threshold = 0.,
         do_only_nuc=False,
         external_nucleus_image = None,
+        **segmentation_parameters
         ) :
 
     nuc_channel = channels[1]
@@ -363,7 +226,13 @@ def cell_segmentation(
         nuc = image[nuc_channel]
 
     if nuc.ndim >= 3 and not nucleus_3D_segmentation:
-        nuc = stack.mean_projection(nuc)
+
+        if segmentation_parameters["nucleus_max_proj"] : nuc = np.max(nuc, axis=0)
+        elif segmentation_parameters["nucleus_mean_proj"] : nuc = np.mean(nuc, axis=0)
+        elif segmentation_parameters["nucleus_select_slice"] : nuc = nuc[segmentation_parameters["nucleus_selected_slice"]]
+        else : raise AssertionError("No option found for 2D nucleus seg. Should be impossible as this error is raised after integrity checks")
+    
+    
     nuc_label = _segmentate_object(
         nuc, 
         nucleus_model_name, 
@@ -379,11 +248,17 @@ def cell_segmentation(
         nuc = image[nuc_channel] if type(external_nucleus_image) == type(None) else external_nucleus_image
 
         if image[cyto_channel].ndim >= 3 and not cyto_3D_segmentation:
-            cyto = stack.mean_projection(image[cyto_channel])
+            if segmentation_parameters["cytoplasm_max_proj"] : cyto = np.max(image[cyto_channel], axis=0)
+            elif segmentation_parameters["cytoplasm_mean_proj"] : cyto = np.mean(image[cyto_channel], axis=0)
+            elif segmentation_parameters["cytoplasm_select_slice"] : cyto = image[cyto_channel][segmentation_parameters["cytoplasm_selected_slice"]]
+            else : raise AssertionError("No option found for 2D cytoplasm seg. Should be impossible as this error is raised after integrity checks")
         else : 
             cyto = image[cyto_channel]
         if nuc.ndim >= 3 and not cyto_3D_segmentation:
-            nuc = stack.mean_projection(nuc)
+            if segmentation_parameters["cytoplasm_max_proj"] : nuc = np.max(nuc, axis=0)
+            elif segmentation_parameters["cytoplasm_mean_proj"] : nuc = np.mean(nuc, axis=0)
+            elif segmentation_parameters["cytoplasm_select_slice"] : nuc = nuc[segmentation_parameters["cytoplasm_selected_slice"]]
+            else : raise AssertionError("No option found for 2D cytoplasm seg. Should be impossible as this error is raised after integrity checks")
 
         image = np.zeros(shape=(2,) + cyto.shape)
         image[0] = cyto
@@ -464,6 +339,8 @@ def _cast_segmentation_parameters(values:dict) :
         'nucleus_anisotropy' : float,
         'cytoplasm_selected_slice' : int,
         'nucleus_selected_slice' : int,
+        'cytoplasm_min_size' : int,
+        'nucleus_min_size' : int,
     }    
 
     for key, constructor in cast_rules.items() :
@@ -480,6 +357,213 @@ def _cast_segmentation_parameters(values:dict) :
         values['nucleus_model_name'] = None
 
     return values
+
+def _check_integrity_segmentation_parameters(
+    values : pipeline_parameters, 
+    user_parameters : pipeline_parameters, 
+    available_channels : list, 
+    available_slices : list
+    ) :
+    """
+    Check that parameters entered by user comply with what we need to do with them. Type checking is handle in _cast_segmentation_parameters, if any parameters could not be cast to 
+    appropriate type, it is set to None.
+    """
+
+    values : pipeline_parameters = _cast_segmentation_parameters(values)
+    is_3D_stack = user_parameters["is_3D_stack"]
+    is_multichannel = user_parameters["is_multichannel"]
+
+    relaunch= False
+    #2D/3D seg
+    if is_3D_stack :
+        for obj in ["cytoplasm","nucleus"] :
+            assert values[obj + "_radio_2D"] + values[obj + "_radio_3D"] == 1, f"Incorrect number of segmentation dimension was selected (should be 1) for {obj}"
+            assert values[obj + "_max_proj"] + values[obj + "_mean_proj"] + values[obj + "_select_slice"] == 1, f"Incorrect number of 2D segmentation options were selected (should be 1) for {obj}"
+
+            if values[obj + "_radio_2D"] : values[obj + "_segmentation_3D"] = False
+            else : values[obj + "_segmentation_3D"] = True
+
+        #Selected slice
+        for key in ['cytoplasm_selected_slice', 'nucleus_selected_slice'] :
+            if not isinstance(values[key], int) :
+                relaunch = True
+                sg.popup("Invalid slice number for cytoplasm 2D segmentation.")
+                values[key] = user_parameters[key]
+            elif values[key] not in available_slices :
+                relaunch = True
+                sg.popup(f"Invalid slice number for cytoplasm 2D segmentation, selecgted between 0 and {available_slices[-1]}")
+                values[key] = user_parameters[key]
+        
+        #anisotropy
+        if not isinstance(values["nucleus_anisotropy"], (float, int)) :
+            relaunch=True
+            sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
+            values["anisotropy"] = user_parameters["anisotropy"]
+        elif values["nucleus_anisotropy"] < 0 :
+            relaunch=True
+            sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
+            values["anisotropy"] = user_parameters["anisotropy"]
+
+        if not values["segment_only_nuclei"] :
+            if not isinstance(values["cytoplasm_anisotropy"], (float, int)) :
+                relaunch=True
+                sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
+                values["anisotropy"] = user_parameters["anisotropy"]
+            elif values["cytoplasm_anisotropy"] < 0 :
+                relaunch=True
+                sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
+                values["anisotropy"] = user_parameters["anisotropy"]
+
+        if values["segment_only_nuclei"] :
+            values["anisotropy"] = values["nucleus_anisotropy"]
+        elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and isinstance(values["nucleus_anisotropy"], (float, int)):
+            if not values["cytoplasm_anisotropy"] ==values["nucleus_anisotropy"] :
+                relaunch=True
+                sg.popup("Anisotropy must be equal for nucleus and cytoplasm segmentation")
+            else :
+                values["anisotropy"] = values["nucleus_anisotropy"]
+
+        if not isinstance(values["anisotropy"], (float,int)) :
+            sg.popup("Anisotropy must be a positive float.")
+            relaunch = True
+            values['anisotropy'] = user_parameters['anisotropy']
+    
+    else :
+        values["cytoplasm_segmentation_3D"] = False
+        values["nucleus_segmentation_3D"] = False
+        values["anisotropy"] = 1
+        for obj in ["nucleus","cytoplasm"] :
+            values[obj + "_max_proj"] = False
+            values[obj + "_mean_proj"] = True
+            values[obj + "_select_slice"] = False
+            values[obj + "_selected_slice"] = 0
+
+    #Min size
+    if not isinstance(values["cytoplasm_min_size"], int) :
+        relaunch=True
+        sg.popup("Invalid value for cytoplasm min size parameter, must be a positive int.")
+        values["cytoplasm_min_size"] = user_parameters["cytoplasm_min_size"]
+    elif values["cytoplasm_min_size"] < 0 :
+        relaunch=True
+        sg.popup("Invalid value for cytoplasm min size parameter, must be a positive int.")
+        values["cytoplasm_min_size"] = user_parameters["cytoplasm_min_size"]
+
+    if not isinstance(values["nucleus_min_size"], int) :
+        relaunch=True
+        sg.popup("Invalid value for nucleus min size parameter, must be a positive int.")
+        values["nucleus_min_size"] = user_parameters["nucleus_min_size"]
+    elif values["nucleus_min_size"] < 0 :
+        relaunch=True
+        sg.popup("Invalid value for nucleus min size parameter, must be a positive int.")
+        values["nucleus_min_size"] = user_parameters["nucleus_min_size"]
+
+    #flow thresholds
+    if type(values['nucleus_flow_threshold']) != float : 
+        sg.popup('Invalid value for flow threshold in nuc parameters, must be a float between 0 and 1.')
+        values['nucleus_flow_threshold'] = user_parameters['nucleus_flow_threshold']
+        relaunch= True
+    elif abs(values['nucleus_flow_threshold']) > 1 or values['nucleus_flow_threshold'] < 0 :
+        sg.popup('Invalid value for flow threshold in cyto parameters, must be a float between 0 and 1.')
+        values['nucleus_flow_threshold'] = user_parameters['nucleus_flow_threshold']
+        relaunch= True 
+
+    if type( values['cytoplasm_flow_threshold']) != float : 
+        sg.popup('Invalid value for flow threshold in cyto parameters, must be a float between 0 and 1.')
+        values['cytoplasm_flow_threshold'] = user_parameters['cytoplasm_flow_threshold']
+        relaunch= True
+    elif abs(values['cytoplasm_flow_threshold']) > 1 or values['cytoplasm_flow_threshold'] < 0 :
+        sg.popup('Invalid value for flow threshold in cyto parameters, must be a float between 0 and 1.')
+        values['cytoplasm_flow_threshold'] = user_parameters['cytoplasm_flow_threshold']
+        relaunch= True 
+    
+    #cellprob thresholds
+    if type(values['nucleus_cellprob_threshold']) != float : 
+        sg.popup('Invalid value for cellprob threshold in nuc parameters, must be a float between -3 and +3.')
+        values['nucleus_cellprob_threshold'] = user_parameters['nucleus_cellprob_threshold']
+        relaunch= True
+    elif abs(values['nucleus_cellprob_threshold']) > 3 :
+        sg.popup('Invalid value for cellprob threshold in cyto parameters, must be a float between -3 and +3.')
+        values['nucleus_cellprob_threshold'] = user_parameters['nucleus_cellprob_threshold']
+        relaunch= True
+
+    if type(values['cytoplasm_cellprob_threshold']) != float :
+        sg.popup('Invalid value for cellprob threshold in cyto parameters, must be a float between -3 and +3.')
+        values['cytoplasm_cellprob_threshold'] = user_parameters['cytoplasm_cellprob_threshold']
+        relaunch= True
+    elif abs(values['cytoplasm_cellprob_threshold']) > 3 :
+        sg.popup('Invalid value for cellprob threshold in cyto parameters, must be a float between -3 and +3.')
+        values['cytoplasm_cellprob_threshold'] = user_parameters['cytoplasm_cellprob_threshold']
+        relaunch= True
+
+    
+    #Models
+    if type(values["cytoplasm_model_name"]) != str  and not do_only_nuc:
+        sg.popup('Invalid cytoplasm model name.')
+        values['cytoplasm_model_name'] = user_parameters['cytoplasm_model_name']
+        relaunch= True
+    if is_multichannel :
+        if values["cytoplasm_channel"] not in available_channels and not do_only_nuc:
+            sg.popup('For given input image please select channel in {0}\ncytoplasm_channel : {1}'.format(available_channels, cytoplasm_channel))
+            relaunch= True
+            values['cytoplasm_channel'] = user_parameters['cytoplasm_channel']
+    else :
+        values["cytoplasm_channel"] = ...
+
+    if type(values["cytoplasm_diameter"]) not in [int, float] and not do_only_nuc:
+        sg.popup("Incorrect cytoplasm size.")
+        relaunch= True
+        values['cytoplasm_diameter'] = user_parameters['cytoplasm_diameter']
+
+    if type(values["nucleus_model_name"]) != str :
+        sg.popup('Invalid nucleus model name.')
+        values['nucleus_model_name'] = user_parameters['nucleus_model_name']
+        relaunch= True
+    
+    if is_multichannel :
+        if values["nucleus_channel"] not in available_channels :
+            sg.popup('For given input image please select channel in {0}\nnucleus channel : {1}'.format(available_channels, nucleus_channel))
+            relaunch= True
+            values['nucleus_channel'] = user_parameters['nucleus_channel']
+    else : 
+        values["nucleus_channel"] = ...
+
+    if type(values["nucleus_diameter"]) not in [int, float] :
+        sg.popup("Incorrect nucleus size.")
+        relaunch= True
+        values['nucleus_diameter'] = user_parameters['nucleus_diameter']
+
+    if values["other_nucleus_image"] != '' :
+        if os.path.isdir(values["other_nucleus_image"]) :
+            values['other_nucleus_image'] = None
+        elif not os.path.isfile(values["other_nucleus_image"]) :
+            sg.popup("Nucleus image is not a file.")
+            relaunch=True
+            values['other_nucleus_image'] = None
+        else :
+            try :
+                nucleus_image = open_image(other_nucleus_image)
+            except Exception as e :
+                sg.popup("Could not open image.\n{0}".format(e))
+                relaunch=True
+                values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+            else :
+                if nucleus_image.ndim != image.ndim - is_multichannel :
+                    sg.popup("Nucleus image dimension missmatched. Expected same dimension as cytoplasm_image for monochannel or same dimension as cytoplasm_image -1 for is_multichannel\ncytoplasm dimension : {0}, nucleus dimension : {1}".format(image.ndim, nucleus_image.ndim))
+                    nucleus_image = None
+                    relaunch=True
+                    values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+                
+                elif nucleus_image.shape != image[cytoplasm_channel].shape :
+                    sg.popup("Nucleus image shape missmatched. Expected same shape as cytoplasm_image \ncytoplasm shape : {0}, nucleus shape : {1}".format(image[cytoplasm_channel].shape, nucleus_image.shape))
+                    nucleus_image = None
+                    relaunch=True
+                    values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+
+    else :
+        values["other_nucleus_image"] = None
+
+    return values, relaunch
+
 
 def remove_disjoint(image):
     """

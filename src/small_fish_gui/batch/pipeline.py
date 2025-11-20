@@ -114,6 +114,7 @@ def batch_pipeline(
                     nucleus_flow_threshold=parameters['cytoplasm_flow_threshold'],
                     cytoplasm_cellprob_threshold=parameters['cytoplasm_cellprob_threshold'],
                     nucleus_cellprob_threshold=parameters['nucleus_cellprob_threshold'],
+                    **parameters
                     )
 
                 parameters['segmentation_done'] = True

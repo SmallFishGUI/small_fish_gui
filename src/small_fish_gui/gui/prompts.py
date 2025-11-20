@@ -95,7 +95,7 @@ def input_image_prompt(
     try :
         image = open_image(im_path)
         check_format(image, is_3D_stack, is_multichannel)
-        values.update({'image' : image})
+        values['image'] =  image
     except FormatError as error:
         sg.popup("Inconsistency between image format and options selected.\n Image shape : {0}".format(image.shape))
     except OSError as error :
@@ -165,9 +165,9 @@ def detection_parameters_promt(
     else : values['dim'] = 2
     return values
 
-def segmentation_prompt(**kwargs) :
+def segmentation_prompt(**segmentation_parameters) :
 
-    layout, event_dict = _segmentation_layout(**kwargs)
+    layout, event_dict = _segmentation_layout(**segmentation_parameters)
 
     layout += [[sg.Button("Ok", bind_return_key=True), sg.Button("Cancel")]]
     layout = [[sg.Column(layout, scrollable=True, vertical_scroll_only=True, size_subsample_height=2, expand_x=True, expand_y=True)]]
