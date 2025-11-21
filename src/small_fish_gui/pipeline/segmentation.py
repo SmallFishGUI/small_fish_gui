@@ -70,10 +70,12 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
         while True :
             segmentation_parameters.setdefault("other_nucleus_image", segmentation_parameters["working_directory"])
             segmentation_parameters.setdefault("cytoplasm_channel", segmentation_parameters["detection_channel"])
+            segmentation_parameters.setdefault("cytoplasm_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
+            segmentation_parameters.setdefault("nucleus_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
+
+
             event, values = segmentation_prompt(
                 saving_path= segmentation_parameters.setdefault("seg_control_saving_path", segmentation_parameters["working_directory"]),
-                cytoplasm_segmentation_3D= segmentation_parameters["do_3D_segmentation"],
-                nucleus_segmentation_3D= segmentation_parameters["do_3D_segmentation"],
                 **segmentation_parameters
                 )
 
@@ -201,9 +203,11 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
     return nucleus_label, cytoplasm_label, user_parameters
 
 def cell_segmentation(
-        image, cytoplasm_model_name, 
+        reordered_image, 
+        cytoplasm_model_name, 
         nucleus_model_name, 
-        channels, cytoplasm_diameter, 
+        channels, 
+        cytoplasm_diameter, 
         nucleus_diameter,
         nucleus_3D_segmentation=False,
         cyto_3D_segmentation=False,
@@ -223,7 +227,7 @@ def cell_segmentation(
     if type(external_nucleus_image) != type(None) :
         nuc = external_nucleus_image
     else :
-        nuc = image[nuc_channel]
+        nuc = reordered_image[nuc_channel]
 
     if nuc.ndim >= 3 and not nucleus_3D_segmentation:
 
@@ -245,30 +249,30 @@ def cell_segmentation(
     
     if not do_only_nuc : 
         cyto_channel = channels[0]
-        nuc = image[nuc_channel] if type(external_nucleus_image) == type(None) else external_nucleus_image
+        nuc = reordered_image[nuc_channel] if type(external_nucleus_image) == type(None) else external_nucleus_image
 
-        if image[cyto_channel].ndim >= 3 and not cyto_3D_segmentation:
-            if segmentation_parameters["cytoplasm_max_proj"] : cyto = np.max(image[cyto_channel], axis=0)
-            elif segmentation_parameters["cytoplasm_mean_proj"] : cyto = np.mean(image[cyto_channel], axis=0)
-            elif segmentation_parameters["cytoplasm_select_slice"] : cyto = image[cyto_channel][segmentation_parameters["cytoplasm_selected_slice"]]
+        if reordered_image[cyto_channel].ndim >= 3 and not cyto_3D_segmentation:
+            if segmentation_parameters["cytoplasm_max_proj"] : cyto = np.max(reordered_image[cyto_channel], axis=0)
+            elif segmentation_parameters["cytoplasm_mean_proj"] : cyto = np.mean(reordered_image[cyto_channel], axis=0)
+            elif segmentation_parameters["cytoplasm_select_slice"] : cyto = reordered_image[cyto_channel][segmentation_parameters["cytoplasm_selected_slice"]]
             else : raise AssertionError("No option found for 2D cytoplasm seg. Should be impossible as this error is raised after integrity checks")
         else : 
-            cyto = image[cyto_channel]
+            cyto = reordered_image[cyto_channel]
         if nuc.ndim >= 3 and not cyto_3D_segmentation:
             if segmentation_parameters["cytoplasm_max_proj"] : nuc = np.max(nuc, axis=0)
             elif segmentation_parameters["cytoplasm_mean_proj"] : nuc = np.mean(nuc, axis=0)
             elif segmentation_parameters["cytoplasm_select_slice"] : nuc = nuc[segmentation_parameters["cytoplasm_selected_slice"]]
             else : raise AssertionError("No option found for 2D cytoplasm seg. Should be impossible as this error is raised after integrity checks")
 
-        image = np.zeros(shape=(2,) + cyto.shape)
-        image[0] = cyto
-        image[1] = nuc
-        source = list(range(image.ndim))
+        reordered_image = np.zeros(shape=(2,) + cyto.shape)
+        reordered_image[0] = cyto
+        reordered_image[1] = nuc
+        source = list(range(reordered_image.ndim))
         dest = source[-1:] + source[:-1]
-        image = np.moveaxis(image, source=range(image.ndim), destination= dest)
+        reordered_image = np.moveaxis(reordered_image, source=range(reordered_image.ndim), destination= dest)
 
         cytoplasm_label = _segmentate_object(
-            image, 
+            reordered_image, 
             cytoplasm_model_name, 
             cytoplasm_diameter, 
             do_3D=cyto_3D_segmentation, 
@@ -398,35 +402,36 @@ def _check_integrity_segmentation_parameters(
         if not isinstance(values["nucleus_anisotropy"], (float, int)) :
             relaunch=True
             sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
-            values["anisotropy"] = user_parameters["anisotropy"]
+            values["anisotropy"] = user_parameters.get("anisotropy")
         elif values["nucleus_anisotropy"] < 0 :
             relaunch=True
             sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
-            values["anisotropy"] = user_parameters["anisotropy"]
+            values["anisotropy"] = user_parameters.get("anisotropy")
 
         if not values["segment_only_nuclei"] :
             if not isinstance(values["cytoplasm_anisotropy"], (float, int)) :
                 relaunch=True
                 sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
-                values["anisotropy"] = user_parameters["anisotropy"]
+                values["anisotropy"] = user_parameters.get("anisotropy")
             elif values["cytoplasm_anisotropy"] < 0 :
                 relaunch=True
                 sg.popup("Invalid value for cytoplasm anisotropy, must be a positive float.")
-                values["anisotropy"] = user_parameters["anisotropy"]
+                values["anisotropy"] = user_parameters.get("anisotropy")
 
         if values["segment_only_nuclei"] :
             values["anisotropy"] = values["nucleus_anisotropy"]
         elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and isinstance(values["nucleus_anisotropy"], (float, int)):
-            if not values["cytoplasm_anisotropy"] ==values["nucleus_anisotropy"] :
+            if (not values["cytoplasm_anisotropy"] == values["nucleus_anisotropy"]) and (not values["segment_only_nuclei"]) :
                 relaunch=True
                 sg.popup("Anisotropy must be equal for nucleus and cytoplasm segmentation")
+                values["anisotropy"] = user_parameters.get("anisotropy")
             else :
                 values["anisotropy"] = values["nucleus_anisotropy"]
 
         if not isinstance(values["anisotropy"], (float,int)) :
             sg.popup("Anisotropy must be a positive float.")
             relaunch = True
-            values['anisotropy'] = user_parameters['anisotropy']
+            values['anisotropy'] = user_parameters.get("anisotropy")
     
     else :
         values["cytoplasm_segmentation_3D"] = False
