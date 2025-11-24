@@ -217,7 +217,7 @@ def cell_segmentation(
         cytoplasm_cellprob_threshold = 0.,
         do_only_nuc=False,
         external_nucleus_image = None,
-        **segmentation_parameters
+        **segmentation_parameters : pipeline_parameters
         ) :
 
     nuc_channel = channels[1]
@@ -243,7 +243,8 @@ def cell_segmentation(
         do_3D=nucleus_3D_segmentation, 
         anisotropy=anisotropy,
         flow_threshold= nucleus_flow_threshold,
-        cellprob_threshold=nucleus_cellprob_threshold
+        cellprob_threshold=nucleus_cellprob_threshold,
+        min_size=segmentation_parameters["nucleus_min_size"]
         )
     
     if not do_only_nuc : 
@@ -278,6 +279,7 @@ def cell_segmentation(
             anisotropy=anisotropy,
             flow_threshold=cytoplasm_flow_threshold,
             cellprob_threshold=cytoplasm_cellprob_threshold,
+            min_size=segmentation_parameters["cytoplasm_min_size"]
             )
 
         if cytoplasm_label.ndim == 3 and nuc_label.ndim == 2 :
