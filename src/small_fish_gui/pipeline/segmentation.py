@@ -73,7 +73,6 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             segmentation_parameters.setdefault("cytoplasm_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
             segmentation_parameters.setdefault("nucleus_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
 
-
             event, values = segmentation_prompt(
                 saving_path= segmentation_parameters.setdefault("seg_control_saving_path", segmentation_parameters["working_directory"]),
                 **segmentation_parameters
@@ -420,13 +419,17 @@ def _check_integrity_segmentation_parameters(
 
         if values["segment_only_nuclei"] :
             values["anisotropy"] = values["nucleus_anisotropy"]
-        elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and isinstance(values["nucleus_anisotropy"], (float, int)):
+        elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and isinstance(values["nucleus_anisotropy"], (float, int)) and values["nucleus_segmentation_3D"] and values["cytoplasm_segmentation_3D"]:
             if (not values["cytoplasm_anisotropy"] == values["nucleus_anisotropy"]) and (not values["segment_only_nuclei"]) :
                 relaunch=True
                 sg.popup("Anisotropy must be equal for nucleus and cytoplasm segmentation")
                 values["anisotropy"] = user_parameters.get("anisotropy")
             else :
                 values["anisotropy"] = values["nucleus_anisotropy"]
+        elif isinstance(values["nucleus_anisotropy"], (float, int)) and values["nucleus_segmentation_3D"] :
+            values["anisotropy"] = values["nucleus_anisotropy"]
+        elif isinstance(values["cytoplasm_anisotropy"], (float, int)) and values["cytoplasm_segmentation_3D"] :
+            values["anisotropy"] = values["cytoplasm_anisotropy"]
 
         if not isinstance(values["anisotropy"], (float,int)) :
             sg.popup("Anisotropy must be a positive float.")
