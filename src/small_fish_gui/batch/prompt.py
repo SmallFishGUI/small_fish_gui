@@ -85,6 +85,12 @@ def batch_promp(
     map_tab = sg.Tab("Map", map_layout)
 
     #Segmentation tab
+    preset.setdefault("other_nucleus_image", default.working_directory)
+    preset.setdefault("cytoplasm_channel", default.detection_channel)
+    preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation)
+    preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation)
+    
+
     segmentation_layout = _segmentation_layout(
         is_multichannel=True,
         is_3D_stack=True, 
