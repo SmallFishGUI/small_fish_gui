@@ -282,14 +282,14 @@ def detect_spots(image, image_input_values: dict) :
         threshold = threshold_penalty * compute_auto_threshold(image, voxel_size=voxel_size, spot_radius=spot_size, log_kernel_size=log_kernel_size, minimum_distance=minimum_distance)
         threshold = max(threshold,15) # Force threshold to be at least 15 to match napari widget and to not have too many spots for weak configs
 
-    filtered_image = _apply_log_filter(
+    filtered_image = detection._apply_log_filter(
         image=image,
         voxel_size=voxel_size,
         spot_radius=spot_size,
         log_kernel_size = log_kernel_size,
     )
 
-    local_maxima = _local_maxima_mask(
+    local_maxima = detection._local_maxima_mask(
         image_filtered=filtered_image,
         voxel_size=voxel_size,
         spot_radius=spot_size,
