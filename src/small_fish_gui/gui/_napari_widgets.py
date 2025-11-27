@@ -7,11 +7,12 @@ import pandas as pd
 import bigfish.detection as detection
 import bigfish.stack as stack
 from skimage.segmentation import find_boundaries
+from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
 
 from napari.layers import Labels, Points, Image
 from magicgui import magicgui
 from magicgui.widgets import SpinBox, Container
-from bigfish.detection import spots_thresholding, get_object_radius_pixel
+from bigfish.detection import spots_thresholding
 from napari.types import LayerDataTuple
 
 from abc import ABC, abstractmethod
@@ -575,7 +576,7 @@ class SpotDetector(NapariWidget) :
             tuple_hint = Tuple[int,int,int]
 
         @magicgui(
-            threshold = {"widget_type" : SpinBox, "min" : "5", "value" : self.default_threshold, "max" : self.filtered_image.max()},
+            threshold = {"widget_type" : SpinBox, "min" : 1, "value" : self.default_threshold, "max" : self.filtered_image.max()},
             spot_radius = {"label" : "spot radius(zyx)", "value" : self.spot_radius},
             kernel_size = {"label" : "LoG kernel size(zyx)"},
             minimum_distance = {"label" : "Distance min between spots"},
@@ -651,51 +652,6 @@ class SpotDetector(NapariWidget) :
                 (spots, spot_layer_args, 'points')
                 ]
         return find_spots
-
-
-def _apply_log_filter(
-        image: np.ndarray,
-        voxel_size : tuple,
-        spot_radius : tuple,
-        log_kernel_size,
-
-) :
-    """
-    Apply spot detection steps until local maxima step (just before final threshold).
-    Return filtered image.
-    """
-    
-    ndim = image.ndim
-
-    if type(log_kernel_size) == type(None) :
-        log_kernel_size = get_object_radius_pixel(
-                voxel_size_nm=voxel_size,
-                object_radius_nm=spot_radius,
-                ndim=ndim)
-    
-    
-    image_filtered = stack.log_filter(image, log_kernel_size)
-    
-    return image_filtered
-    
-def _local_maxima_mask(
-    image_filtered: np.ndarray,
-    voxel_size : tuple,
-    spot_radius : tuple,
-    minimum_distance
-
-    ) : 
-
-    ndim = image_filtered.ndim
-
-    if type(minimum_distance) == type(None) :
-        minimum_distance = get_object_radius_pixel(
-            voxel_size_nm=voxel_size,
-            object_radius_nm=spot_radius,
-            ndim=ndim)
-    mask_local_max = detection.local_maximum_detection(image_filtered, minimum_distance)
-    
-    return mask_local_max.astype(bool)
 
 class DenseRegionDeconvolver(NapariWidget) :
     """
