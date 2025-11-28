@@ -93,20 +93,25 @@ def update_segmentation_tab(
         do_segmentation : bool, 
         is_multichannel : bool, 
         is_3D : bool, 
-        is_mapping_ok: bool
+        is_mapping_ok: bool,
+        segmentation_event_dict : dict,
         ) : 
-    
-    #Access elements
-    cytoplasm_channel_elmt = get_elmt_from_key(tab_elmt, key= 'cytoplasm_channel')
-    nucleus_channel_elmt = get_elmt_from_key(tab_elmt, key= 'nucleus_channel')
-    do_nucleus_3D_elmt = get_elmt_from_key(tab_elmt, key= "nucleus_segmentation_3D")
-    do_cytoplasm_3D_elmt = get_elmt_from_key(tab_elmt, key= "cytoplasm_segmentation_3D")
-    
+
     #Update values
-    cytoplasm_channel_elmt.update(disabled = not is_multichannel)
-    nucleus_channel_elmt.update(disabled = not is_multichannel)
-    do_nucleus_3D_elmt.update(disabled = not is_3D)
-    do_cytoplasm_3D_elmt.update(disabled = not is_3D)
+    for object_key in ["cytoplasm", "nucleus"] :
+        segmentation_event_dict[object_key + "_channel"].update(disabled = not is_multichannel)
+        if segmentation_event_dict[object_key + "_radio_2D_seg"].get() :
+            for elmnt in segmentation_event_dict[object_key + "_radio_2D"] : elmnt.update(disabled= False)
+            for elmnt in segmentation_event_dict[object_key + "_radio_3D"] : elmnt.update(disabled= True)
+        else :
+            for elmnt in segmentation_event_dict[object_key + "_radio_2D"] : elmnt.update(disabled= True)
+            for elmnt in segmentation_event_dict[object_key + "_radio_3D"] : elmnt.update(disabled= False)
+
+    if segmentation_event_dict["segment_only_nuclei"].get() :
+        segmentation_event_dict["cytoplasm_column"].update(visible=False)
+    else :
+        segmentation_event_dict["cytoplasm_column"].update(visible=True)
+
     segmentation_correct_text.update(visible= do_segmentation)
 
     tab_elmt.update(visible=is_mapping_ok and do_segmentation)
