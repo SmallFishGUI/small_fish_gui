@@ -400,6 +400,8 @@ def _check_integrity_segmentation_parameters(
                 values[key] = user_parameters[key]
         
         #anisotropy
+        if not "anisotropy" in values.keys() :
+            values["anisotropy"] = 1
         if not isinstance(values["nucleus_anisotropy"], (float, int)) :
             relaunch=True
             sg.popup("Invalid value for nucleus anisotropy, must be a positive float.")
