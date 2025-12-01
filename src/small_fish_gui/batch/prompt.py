@@ -251,7 +251,6 @@ def batch_promp(
             event, values = window.read(timeout=timeout)
 
             if event != sg.TIMEOUT_KEY :
-                print(event)
                 stream_output.restore_stderr()
                 stream_output.restore_stdout()
 
