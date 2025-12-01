@@ -289,7 +289,7 @@ def hub_prompt(
         [sg.Button('Rename acquisition', button_color= 'gray'), sg.Button('Delete acquisitions',button_color= 'gray'), sg.Button('Reset segmentation',button_color= 'gray'), sg.Button('Reset all',button_color= 'gray'), sg.Button('Open wiki',button_color= 'yellow', key='wiki')],
     ]
 
-    window = sg.Window('small fish', layout= layout, margins= (10,10), location=None)
+    window = sg.Window('small fish', layout= layout, margins= (10,10), location=None, enable_close_attempted_event=True)
 
     while True : 
         event, values = window.read()
