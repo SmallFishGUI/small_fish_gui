@@ -13,12 +13,13 @@ from .input import load, extract_files
 from .integrity import sanity_check, check_channel_map_integrity, check_detection_parameters, check_segmentation_parameters, check_output_parameters
 from ..gui.layout import _segmentation_layout, _detection_layout, _input_parameters_layout, _ask_channel_map_layout
 from ..interface import get_settings
+from ..hints import pipeline_parameters
 
 def batch_promp(
         results_df,
         cell_results_df,
         acquisition_id,
-        preset: dict={},
+        preset: pipeline_parameters,
     ) :
 
     files_values = [[]]
@@ -84,38 +85,30 @@ def batch_promp(
     map_layout += [[auto_map, apply_map_button]]
     map_tab = sg.Tab("Map", map_layout)
 
+
+    preset["is_3D_stack"] = True
+    preset["is_multichannel"] = True
+    preset.setdefault("cytoplasm_channel", preset["detection_channel"])
+    preset.setdefault("cytoplasm_segmentation_3D", preset["do_3D_segmentation"])
+    preset.setdefault("nucleus_segmentation_3D", preset["do_3D_segmentation"])
+    preset["filename"] =  ""
+    preset["other_nucleus_image"] =  ""
+    preset["saving_path"] =  ""
+    preset["reordered_shape"] =  None
+    preset.setdefault("filename", "")
     #Segmentation tab
     preset.setdefault("other_nucleus_image", default.working_directory)
     preset.setdefault("cytoplasm_channel", default.detection_channel)
     preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation)
     preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation)
     
-
-    segmentation_layout = _segmentation_layout(
-        is_multichannel=True,
-        is_3D_stack=True, 
-        cytoplasm_model_preset=preset.setdefault("cytoplasm_model_name",default.cytoplasm_model),
-        cytoplasm_channel_preset=preset.setdefault("cytoplasm_channel",default.detection_channel),
-        cytoplasm_diameter_preset=preset.setdefault("cytoplasm_diameter",default.cytoplasm_diameter),
-        nucleus_model_preset=preset.setdefault("nucleus_model_name",default.nucleus_model),
-        nucleus_channel_preset=preset.setdefault("nucleus channel",default.nucleus_channel),
-        nucleus_diameter_preset=preset.setdefault("nucleus_diameter",default.nucleus_diameter),
-        segment_only_nuclei_preset=preset.setdefault("segment_only_nuclei",default.segment_only_nuclei),
-        filename_preset="",
-        cytoplasm_segmentation_3D= preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation),
-        nucleus_segmentation_3D=preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation),
-        anisotropy=preset.setdefault("anisotropy", default.anisotropy),
-        flow_threshold=preset.setdefault("flow_threshold",default.flow_threshold),
-        cellprob_threshold=preset.setdefault("cellprob_threshold", default.cellprob_threshold),
-        show_segmentation_preset=False,
-        save_segmentation_visual_preset=False,
-        saving_path_preset="",
-        other_nucleus_image_preset=""
+    segmentation_layout, segmentation_event_dict = _segmentation_layout(
+        **preset
         )
     
     apply_segmentation_button = sg.Button('apply', key='apply-segmentation')
     segmentation_layout += [[apply_segmentation_button]]
-    seg_keys_to_hide = ['show_segmentation', 'saving path', 'filename', 'other_nucleus_image', 'save_segmentation_visuals', 'saving path_browse']
+    seg_keys_to_hide = ['show_segmentation', 'seg_control_saving_path', 'filename', 'other_nucleus_image', 'save_segmentation_visuals', 'seg_control_saving_path_browse']
     segmentation_tab = sg.Tab("Segmentation", segmentation_layout, visible=False)
 
     #Detection tab
@@ -209,12 +202,12 @@ def batch_promp(
     stream_output = sg.Output(size=(100,10), pad=(30,10), visible=True, expand_x=True, expand_y=True)
     layout = [
         [sg.Text("Batch Processing", font=('bold',20), pad=((300,0),(0,2)))],
-        [sg.Text("Select a folder : "), sg.FolderBrowse(initial_folder=os.getcwd(), key='Batch_folder'), sg.Button('Load')],
+        [sg.Text("Select a folder : "), sg.FolderBrowse(initial_folder=preset["working_directory"], key='Batch_folder'), sg.Button('Load')],
         [files_table],
         [sanity_header, sanity_check_button, sanity_progress],
         [dimension_number_text],
         [tab_col, sg.Push(), launch_col, sg.Push()],
-        [stream_output],
+        # [stream_output],
     ]
 
     window = sg.Window("small fish", layout=layout, size= (800,800), auto_size_buttons=True, auto_size_text=True, resizable=True)
@@ -234,7 +227,6 @@ def batch_promp(
         '_is_output_correct' : output_ok_text,
 
     }
-    loop = 0
     timeout = 1
     last_shape = None
     talk=True
@@ -249,17 +241,26 @@ def batch_promp(
     get_elmt_from_key(tab_dict['Input'], key= 'image_path').update(disabled=True)
     for key in seg_keys_to_hide : get_elmt_from_key(tab_dict['Segmentation'], key=key).update(disabled=True)
     for key in detection_keys_to_hide : get_elmt_from_key(tab_dict['Detection'], key=key).update(disabled=True)
-    
+    first_loop = True
+
+
+
     while True : 
         try :
-            loop +=1
             window = window.refresh()
             event, values = window.read(timeout=timeout)
 
+            if event != sg.TIMEOUT_KEY :
+                print(event)
+                stream_output.restore_stderr()
+                stream_output.restore_stdout()
+
+
             #Welcome message
-            if loop == 1 : 
+            if first_loop : 
                 timeout = 500
                 print("Welcome to small fish batch analysis. Please start by loading some files and setting parameters.")
+                first_loop = False
 
             if values is None : return results_df, cell_results_df, acquisition_id, preset, bool(preset.get("segmentation_done")), None,None
             
@@ -423,7 +424,8 @@ def batch_promp(
                 do_segmentation=do_segmentation,
                 is_multichannel=is_multichanel,
                 is_3D=is_3D,
-                is_mapping_ok=Master_parameters_dict['_is_mapping_correct']
+                is_mapping_ok=Master_parameters_dict['_is_mapping_correct'],
+                segmentation_event_dict=segmentation_event_dict,
             )
 
             update_detection_tab(

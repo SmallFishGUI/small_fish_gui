@@ -284,7 +284,7 @@ def _segmentation_layout(
     return layout, event_dict
 
 def _segmentate_object_layout(
-    reordered_shape : tuple,
+    reordered_shape : tuple | None,
     object_key : str,     
     is_multichannel : bool,
     is_3D_stack : bool,
@@ -314,7 +314,7 @@ def _segmentate_object_layout(
         radio_mean_proj = sg.Radio("mean proj", group_id=object_key+"_2D_proj", default=True, disabled= segmentation_3D, key = object_key + "_mean_proj")
         radio_slice_proj = sg.Radio("select slice", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key=object_key + "_select_slice")
         
-        slice_number = reordered_shape[0 + is_multichannel]
+        slice_number = reordered_shape[0 + is_multichannel] if not reordered_shape is None else 999
         int_slice_proj = sg.Spin(list(range(slice_number)), size= (5,1), disabled= segmentation_3D, key=object_key+"_selected_slice")
 
         options_2D += [
@@ -341,7 +341,9 @@ def _segmentate_object_layout(
             anisotropy
         ]
 
-    if is_multichannel : layout += parameters_layout([f'{object_key.capitalize()} channel'],default_values= [channel], keys = [object_key+"_channel"])
+    if is_multichannel : 
+        channel_elmt = sg.Input(channel, key=object_key + "_channel", size=5)
+        layout += [[sg.Text(f'{object_key.capitalize()} channel'), channel_elmt]]
 
     layout += [[sg.Text("Cellpose model : ")] + combo_elmt(models_list, key=object_key +'_model_name', default_value= model)]
     layout += parameters_layout([f'{object_key.capitalize()} diameter'], unit= "px", default_values= [diameter], keys=[object_key+'_diameter'])
@@ -359,6 +361,9 @@ def _segmentate_object_layout(
     event_dict = {
         key_2D : options_2D,
         key_3D : options_3D,
+        object_key + "_radio_2D_seg" : radio_2D_seg,
+        object_key + "_radio_3D_seg" : radio_3D_seg,
+        object_key + "_channel" : channel_elmt, # For batch mode layout update
     }
 
     return object_col, event_dict

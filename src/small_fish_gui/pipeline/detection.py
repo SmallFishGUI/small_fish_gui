@@ -1,5 +1,5 @@
 """
-Contains code to handle detection as well as bigfish wrappers related to spot detection.
+Submodule to handle detection as well as bigfish wrappers related to spot detection.
 """
 from ..hints import pipeline_parameters
 
@@ -12,7 +12,7 @@ from ..gui import detection_parameters_promt
 
 from ..interface import get_voxel_size
 from ..utils import compute_anisotropy_coef
-from ._signaltonoise import compute_snr_spots
+from ._bigfish_wrapers import compute_snr_spots, _apply_log_filter, _local_maxima_mask
 
 from magicgui import magicgui
 
@@ -30,8 +30,6 @@ import bigfish.classification as classification
 from bigfish.detection.spot_detection import get_object_radius_pixel
 from skimage.measure import regionprops
 from scipy.ndimage import binary_dilation
-
-
 
 def compute_auto_threshold(images, voxel_size=None, spot_radius=None, log_kernel_size=None, minimum_distance=None, im_number= 15, crop_zstack= None) :
     """
@@ -280,7 +278,7 @@ def detect_spots(image, image_input_values: dict) :
     
     if type(threshold) == type(None) :     
         threshold = threshold_penalty * compute_auto_threshold(image, voxel_size=voxel_size, spot_radius=spot_size, log_kernel_size=log_kernel_size, minimum_distance=minimum_distance)
-        threshold = max(threshold,15) # Force threshold to be at least 15 to match napari widget and to not have too many spots for weak configs
+        threshold = max(threshold,1)
 
     filtered_image = _apply_log_filter(
         image=image,

@@ -1,14 +1,23 @@
 """
-Signal to noise wrapper from BigFish code.
+Wrappers from BigFish code.
 """
 
-
-# ### SNR ###
-import bigfish.stack as stack
 import numpy as np
-from bigfish.detection.utils import get_object_radius_pixel, get_spot_volume, get_spot_surface
+import bigfish.stack as stack
+import bigfish.detection as detection
+from bigfish.detection.utils import (
+    get_object_radius_pixel, 
+    get_spot_volume, 
+    get_spot_surface,
+    get_object_radius_pixel
+    )
 
-def compute_snr_spots(image, spots, voxel_size, spot_radius):
+def compute_snr_spots(
+    image : np.ndarray, 
+    spots : np.ndarray, 
+    voxel_size : tuple[int,int,int], 
+    spot_radius : int
+    ):
     """
     Modified version of bigfish.detection.utils compute_snr_spots : 
     # Author: Arthur Imbert <arthur.imbert.pro@gmail.com>
@@ -217,3 +226,46 @@ def compute_snr_spots(image, spots, voxel_size, spot_radius):
         }
 
     return res
+
+def _apply_log_filter(
+        image: np.ndarray,
+        voxel_size : tuple,
+        spot_radius : tuple,
+        log_kernel_size : tuple[int] | int,
+
+) :
+    """
+    Apply spot detection steps until local maxima step (just before final threshold).
+    Return filtered image.
+    """
+    
+    ndim = image.ndim
+
+    if type(log_kernel_size) == type(None) :
+        log_kernel_size = get_object_radius_pixel(
+                voxel_size_nm=voxel_size,
+                object_radius_nm=spot_radius,
+                ndim=ndim)
+    
+    
+    image_filtered = stack.log_filter(image, log_kernel_size)
+    
+    return image_filtered
+    
+def _local_maxima_mask(
+    image_filtered: np.ndarray,
+    voxel_size : tuple,
+    spot_radius : tuple,
+    minimum_distance : int,
+    ) : 
+
+    ndim = image_filtered.ndim
+
+    if type(minimum_distance) == type(None) :
+        minimum_distance = get_object_radius_pixel(
+            voxel_size_nm=voxel_size,
+            object_radius_nm=spot_radius,
+            ndim=ndim)
+    mask_local_max = detection.local_maximum_detection(image_filtered, minimum_distance)
+    
+    return mask_local_max.astype(bool)

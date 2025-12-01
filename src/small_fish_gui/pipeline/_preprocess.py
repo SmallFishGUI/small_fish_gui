@@ -242,8 +242,9 @@ def check_integrity(
 
     #voxel_size
     if type(values['voxel_size']) == type(None) : 
-        print(values['voxel_size'])
         raise ParameterInputError('Incorrect voxel size parameter.')
+    elif (np.array(values['voxel_size']) < 1).any() :
+        raise ParameterInputError('Voxel size can be < 1.')
     
     #detection integrity :
     if not isinstance(values['spot_size'], (tuple, list)) and not(isinstance(values['minimum_distance'], (tuple, list)) and isinstance(values['log_kernel_size'], (tuple, list))) :
