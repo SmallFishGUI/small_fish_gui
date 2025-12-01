@@ -787,9 +787,18 @@ class BackgroundRemover(NapariWidget) :
         self.other_image = other_image
         self.signal = signal.copy()
         self.voxel_size = voxel_size
+
+        self.signal_args = {
+                "contrast_limits" : [result.min(), result.max()],
+                "name" : "raw signal",
+                "colormap" : 'green',
+                "scale" : scale,
+                "blending" : 'additive'
+            }
+
         super().__init__()
         if self.other_image is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
-
+        self.reset_widget = self._create_reset_button()
 
     def disable_channel(self) :
         self.gui.channel.enabled = False
@@ -802,37 +811,32 @@ class BackgroundRemover(NapariWidget) :
         def remove_background(
             background_path : Path,
             channel : int,
-            reset : bool,
             max_trial : int = 100,
         )-> LayerDataTuple :
 
             self.gui = remove_background
 
-            if reset : 
-                result = self.signal
+            if os.path.isfile(background_path) :
+                background = open_image(background_path)
+            elif self.other_image is None :
+                raise FileNotFoundError(f"{background_path} is not a valid file.")
             else :
-                if os.path.isfile(background_path) :
-                    background = open_image(background_path)
-                elif self.other_image is None :
-                    raise FileNotFoundError(f"{background_path} is not a valid file.")
-                else :
-                    background = self.other_image[channel]
-                if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
+                background = self.other_image[channel]
+            if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
 
-                result, score = remove_autofluorescence_RANSACfit(
-                    signal=self.signal,
-                    background=background,
-                    max_trials=max_trial
-                )
+            result, score = remove_autofluorescence_RANSACfit(
+                signal=self.signal,
+                background=background,
+                max_trials=max_trial
+            )
 
             scale = compute_anisotropy_coef(self.voxel_size)
-            signal_args = {
-                "contrast_limits" : [result.min(), result.max()],
-                "name" : "raw signal",
-                "colormap" : 'green',
-                "scale" : scale,
-                "blending" : 'additive'
-            }
 
-            return (result, signal_args, 'image')
+            return (result, self.signal_args, 'image')
         return remove_background
+    
+    def _create_reset_button(self) :
+
+        @magicgui(call_button= "Reset signal")
+        def reset_signal() -> LayerDataTuple :
+            return (self.signal, self.signal_args, 'image')
