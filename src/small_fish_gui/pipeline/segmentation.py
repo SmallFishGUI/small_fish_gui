@@ -106,15 +106,6 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             window.read(timeout= 30, close= False)
 
         try :
-            if type(segmentation_parameters["seg_control_saving_path"]) != type(None) and segmentation_parameters["filename"] != '':
-                output_path = path + '/' + segmentation_parameters["filename"]
-                nuc_path = output_path + "_nucleus_segmentation"
-                cyto_path = output_path + "_cytoplasm_segmentation"
-            else :
-                output_path = None
-                nuc_path = None
-                cyto_path = None
-
             cytoplasm_label, nucleus_label = cell_segmentation(
                 image,
                 channels=[segmentation_parameters["cytoplasm_channel"], segmentation_parameters["nucleus_channel"]],
@@ -170,15 +161,25 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
 
             
             #Call plots
+            if type(segmentation_parameters["seg_control_saving_path"]) != type(None) and segmentation_parameters["filename"] != '':
+                output_path = segmentation_parameters["seg_control_saving_path"] + '/' + segmentation_parameters["filename"]
+                nuc_path = output_path + "_nucleus_segmentation"
+                cyto_path = output_path + "_cytoplasm_segmentation"
+            else :
+                output_path = None
+                nuc_path = None
+                cyto_path = None
+
+
             plot.plot_segmentation_boundary(nuc_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=nuc_path, title= "Nucleus segmentation (blue)", remove_frame=True,)
-            if not do_only_nuc : 
+            if not segmentation_parameters["segment_only_nuclei"] : 
                 plot.plot_segmentation_boundary(im_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=cyto_path, title="Cytoplasm Segmentation (red)", remove_frame=True)
             plot_labels(
                 nucleus_label,
                 path_output=output_path + "_nucleus_label_map.png",
                 show=False
                 )
-            if not do_only_nuc : 
+            if not segmentation_parameters["segment_only_nuclei"] : 
                 plot_labels(
                     cytoplasm_label_proj,
                     path_output=output_path + "_cytoplasm_label_map.png",
@@ -379,6 +380,17 @@ def _check_integrity_segmentation_parameters(
     is_multichannel = user_parameters["is_multichannel"]
 
     relaunch= False
+    #Control plots
+    if values["save_segmentation_visuals"] :
+        if not os.path.isdir(values["seg_control_saving_path"]) :
+            relaunch=True
+            sg.popup(f"{values["seg_control_saving_path"]} is not a directory.")
+            values["seg_control_saving_path"] = user_parameters.get("seg_control_saving_path")
+        if values["filename"] == "" :
+            relaunch=True
+            sg.popup("Enter a filename for control plots.")
+            values["filename"] = user_parameters.get("filename")
+
     #2D/3D seg
     if is_3D_stack :
         for obj in ["cytoplasm","nucleus"] :
@@ -508,7 +520,7 @@ def _check_integrity_segmentation_parameters(
         relaunch= True
 
     
-    #Models
+    #Cytoplasm parameters
     if type(values["cytoplasm_model_name"]) != str  and not do_only_nuc:
         sg.popup('Invalid cytoplasm model name.')
         values['cytoplasm_model_name'] = user_parameters['cytoplasm_model_name']
@@ -526,6 +538,7 @@ def _check_integrity_segmentation_parameters(
         relaunch= True
         values['cytoplasm_diameter'] = user_parameters['cytoplasm_diameter']
 
+    #Nucleus parameters
     if type(values["nucleus_model_name"]) != str :
         sg.popup('Invalid nucleus model name.')
         values['nucleus_model_name'] = user_parameters['nucleus_model_name']
