@@ -161,31 +161,28 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
 
             
             #Call plots
-            if type(segmentation_parameters["seg_control_saving_path"]) != type(None) and segmentation_parameters["filename"] != '':
+            if segmentation_parameters["save_segmentation_visuals"]:
                 output_path = segmentation_parameters["seg_control_saving_path"] + '/' + segmentation_parameters["filename"]
                 nuc_path = output_path + "_nucleus_segmentation"
                 cyto_path = output_path + "_cytoplasm_segmentation"
-            else :
-                output_path = None
-                nuc_path = None
-                cyto_path = None
 
-
-            plot.plot_segmentation_boundary(nuc_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=nuc_path, title= "Nucleus segmentation (blue)", remove_frame=True,)
-            if not segmentation_parameters["segment_only_nuclei"] : 
-                plot.plot_segmentation_boundary(im_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=cyto_path, title="Cytoplasm Segmentation (red)", remove_frame=True)
-            plot_labels(
-                nucleus_label,
-                path_output=output_path + "_nucleus_label_map.png",
-                show=False
-                )
-            if not segmentation_parameters["segment_only_nuclei"] : 
+                #Plots boundaries
+                plot.plot_segmentation_boundary(nuc_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=nuc_path, title= "Nucleus segmentation (blue)", remove_frame=True,)
+                if not segmentation_parameters["segment_only_nuclei"] : 
+                    plot.plot_segmentation_boundary(im_proj, cytoplasm_label_proj, nucleus_label_proj, boundary_size=2, contrast=True, show=False, path_output=cyto_path, title="Cytoplasm Segmentation (red)", remove_frame=True)
+            
+                #Plots cell labels
                 plot_labels(
-                    cytoplasm_label_proj,
-                    path_output=output_path + "_cytoplasm_label_map.png",
+                    nucleus_label,
+                    path_output=output_path + "_nucleus_label_map.png",
                     show=False
                     )
-
+                if not segmentation_parameters["segment_only_nuclei"] : 
+                    plot_labels(
+                        cytoplasm_label_proj,
+                        path_output=output_path + "_cytoplasm_label_map.png",
+                        show=False
+                        )
 
 
         if cytoplasm_label.max() == 0 : #No cell segmented
