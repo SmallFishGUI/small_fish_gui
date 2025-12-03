@@ -299,41 +299,85 @@ def hub_prompt(
             return event, values
 
     
-def coloc_prompt(spot_list : list) :
-    layout = colocalization_layout(spot_list)
+def coloc_prompt(spot_list : list, **default_values) :
+    layout, element_dict = colocalization_layout(spot_list, **default_values)
 
     layout = [[sg.Col(
         layout,
         expand_x=True,
         expand_y=True,
         vertical_scroll_only=True,
-        scrollable=True
+        scrollable=True,
     )
     ]]
-    window = sg.Window('small fish', layout=layout, margins=(10,10), resizable=True, location=None, auto_size_buttons=True)
+    window = sg.Window('small fish', layout=layout, margins=(10,10), resizable=False, size=(800,800), location=None, auto_size_buttons=True)
     while True : 
         event, values = window.read(timeout=100, timeout_key="timeout")
 
         if event == None : quit()
         elif event == "timeout" : pass
+        elif "radio_spots" in event :
+            spot_id = 1 if "1" in event else 2
+            is_memory = "memory" in event
+            for row in element_dict[f"options_spots{spot_id}_memory"] :
+                for elmnt in row : elmnt.update(disabled= not is_memory)
+            for row in element_dict[f"options_spots{spot_id}_load"] :
+                for elmnt in row : elmnt.update(disabled= is_memory)
+
         elif event == 'Ok' :
-            
-            if values["spots1_dropdown"] =="" :
+            if element_dict["radio_spots1_load"].get() :
                 spots1 = values["spots1_browse"]
             else :
                 spots1 = values["spots1_dropdown"]
 
-            if values["spots2_dropdown"] =="" :
+            if element_dict["radio_spots2_load"].get() :
                 spots2 = values["spots2_browse"]
             else :
                 spots2 = values["spots2_dropdown"]
-            
 
-            window.close()
-            return values['colocalisation distance'], [values['voxel_size_z'], values['voxel_size_y'], values['voxel_size_x']], spots1, spots2
+            if element_dict["radio_spots1_load"].get() and element_dict["radio_spots2_load"].get() :
+                sucess, voxel_size = _check_voxel_size_equality(
+                    voxel_size_1 =(values[f"z_voxel_size_spot1"], values[f"y_voxel_size_spot1"], values[f"x_voxel_size_spot1"]),
+                    voxel_size_2 =(values[f"z_voxel_size_spot2"], values[f"y_voxel_size_spot2"], values[f"x_voxel_size_spot2"]),
+                )
+            elif element_dict["radio_spots1_load"].get() :
+                sucess, voxel_size = _check_voxel_size_equality(
+                    voxel_size_1 =(values[f"z_voxel_size_spot1"], values[f"y_voxel_size_spot1"], values[f"x_voxel_size_spot1"]),
+                    voxel_size_2 =(values[f"z_voxel_size_spot1"], values[f"y_voxel_size_spot1"], values[f"x_voxel_size_spot1"]),
+                )
+            elif element_dict["radio_spots2_load"].get() :
+                sucess, voxel_size = _check_voxel_size_equality(
+                    voxel_size_1 =(values[f"z_voxel_size_spot2"], values[f"y_voxel_size_spot2"], values[f"x_voxel_size_spot2"]),
+                    voxel_size_2 =(values[f"z_voxel_size_spot2"], values[f"y_voxel_size_spot2"], values[f"x_voxel_size_spot2"]),
+                )
+
+            else :
+                voxel_size = (1,1,1)
+                sucess = True
+
+            if not sucess :
+                pass
+            else :
+                window.close()
+                return values['colocalisation distance'], voxel_size,  spots1, spots2, values
         else : 
             window.close()
-            return None,None,None,None
+            return None,None,None,None, {}
+
+def _check_voxel_size_equality(
+    voxel_size_1 : tuple, 
+    voxel_size_2 : tuple
+    ) :
+    try :
+        voxel_size_1 = tuple([int(voxel) for voxel in voxel_size_1])
+        voxel_size_2 = tuple([int(voxel) for voxel in voxel_size_2])
+        if voxel_size_1 != voxel_size_2 :
+            raise ValueError("voxel sizes must be identical for spots 1 and spots 2.")
+    except ValueError as e :
+        sg.popup(str(e))
+        return False, voxel_size_1
+    else :
+        return True, voxel_size_1
 
 def rename_prompt() :
     layout = parameters_layout(['name'], header= "Rename acquisitions", size=12)

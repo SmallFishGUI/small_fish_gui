@@ -463,26 +463,62 @@ def _detection_layout(
 
     return layout
 
-def colocalization_layout(spot_list : list) :
-    layout = [
-        [sg.Push(), sg.Text("Co-localization", size=25, font="bold"), sg.Push()],
-        [sg.VPush()],
+def colocalization_layout(spot_list : list, **default_values) :
+    default = get_settings()
+
+    element_dict = {}
+    can_use_memory = len(spot_list) != 0
+
+    for spot_id in [1,2] :
+        element_dict[f"radio_spots{spot_id}_memory"] = sg.Radio("From memory : ", group_id = spot_id, enable_events = True, key = f"radio_spots{spot_id}_memory", default= can_use_memory or default_values.get(f"radio_spots{spot_id}_memory"), disabled= not can_use_memory)
+        element_dict[f"radio_spots{spot_id}_load"] = sg.Radio("Load spot detection : ", group_id = spot_id, enable_events = True, key = f"radio_spots{spot_id}_load", default= (not can_use_memory) or (default_values.get(f"radio_spots{spot_id}_load")))
+        
+        element_dict[f"spots{spot_id}_browse"] = [
+            sg.Input(size=20, key= f"spots{spot_id}_browse", default_text=default_values.get(f"spots{spot_id}_browse")),
+            sg.FileBrowse(key=f"spots{spot_id}_browsebutton", initial_folder=default_values.setdefault(f"spots{spot_id}_browsebutton", default_values["working_directory"])),
+        ]
+        element_dict[f"spots{spot_id}_voxel_size"] = [
+            sg.Text("voxel size"),
+            sg.Input(size= 5, key= f"z_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"z_voxel_size_spot{spot_id}", "z")),
+            sg.Input(size= 5, key= f"y_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"y_voxel_size_spot{spot_id}", "y")),
+            sg.Input(size= 5, key= f"x_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"x_voxel_size_spot{spot_id}", "x")),
+        ]
+        
+        #Ref for updating
+        element_dict[f"options_spots{spot_id}_memory"] = sg.Col(
+            [[sg.DropDown(values=[""] + spot_list, key=f"spots{spot_id}_dropdown", size= 10, disabled= len(spot_list) == 0, default_value= default_values.setdefault(f"spots{spot_id}_dropdown", ""))]]
+            )
+        element_dict[f"options_spots{spot_id}_load"] = sg.Col(
+            [element_dict[f"spots{spot_id}_browse"], element_dict[f"spots{spot_id}_voxel_size"]]
+            )
+
+    col1 = sg.Col([
         [sg.Text("Spots 1", size = 10)],
-        [sg.DropDown(values=[""] + spot_list, key="spots1_dropdown"), sg.Input(disabled=True, text_color="black"),sg.FileBrowse("Load spot extraction", key="spots1_browse")],
+        [element_dict["radio_spots1_memory"]],
+        [element_dict["options_spots1_memory"]],
+        [element_dict["radio_spots1_load"]],
+        [element_dict["options_spots1_load"]],
+    ])
+
+    col2 = sg.Col([
         [sg.Text("Spots 2", size = 10)],
-        [sg.DropDown(values=[""] + spot_list, key="spots2_dropdown"), sg.Input(disabled=True, text_color="black"),sg.FileBrowse("Load spot extraction", key="spots2_browse")],
+        [element_dict["radio_spots2_memory"]],
+        [element_dict["options_spots2_memory"]],
+        [element_dict["radio_spots2_load"]],
+        [element_dict["options_spots2_load"]],
+    ])
+
+    layout = [
+        [sg.Push(), sg.Text("Co-localization", size=50, font="bold"), sg.Push()],
+        [sg.VPush()],
+        [col1,col2]
     ]
-
-    layout += parameters_layout(['colocalisation distance'], unit= 'nm', default_values= default.coloc_range,)
-
-    layout += tuple_layout(opt={'voxel_size' : False},unit={'voxel_size' : "nm"}, voxel_size = ['z','y','x'], names={'voxel_size' : 'Voxel size'}, default_dict={'voxel_size' : default.voxel_size},)
-    layout += [[sg.Text("   'voxel size' is used only for loaded spot lists.")]]
-
-    layout += [[sg.Push(),sg.Button("Ok", bind_return_key=True),sg.Button("Cancel"),sg.Push(),],
+    layout += parameters_layout(['colocalisation distance'], unit= 'nm', default_values= [default_values.setdefault('colocalisation_distance', default_values["coloc_range"])])
+    layout += [[sg.Button("Ok", bind_return_key=True),sg.Button("Cancel"),sg.Push(),],
         [sg.VPush()]
     ]
 
-    return layout
+    return layout, element_dict
 
 def settings_layout(default_values : SettingsDict = get_default_settings()) :
 

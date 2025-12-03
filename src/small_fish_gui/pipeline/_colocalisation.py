@@ -1,5 +1,6 @@
 from ._custom_errors import MissMatchError
 from ..gui import coloc_prompt, add_default_loading
+from ..interface import get_settings
 
 import os
 import numpy as np
@@ -170,10 +171,15 @@ def initiate_colocalisation(
 
     result_tables = result_tables.set_index('acquisition_id', drop=False)
     available_spots = dict(zip(result_tables['acquisition_id'].astype(str).str.cat(result_tables['name'],sep='-'), result_tables.index))
+    default_values = dict(get_settings())
 
     while True :
         try : 
-            colocalisation_distance, voxel_size, spots1_key, spots2_key = coloc_prompt(list(available_spots.keys()))
+            colocalisation_distance, voxel_size, spots1_key, spots2_key, values = coloc_prompt(
+                list(available_spots.keys()),
+                **default_values
+                )
+            default_values.update(values)
             if colocalisation_distance is None :
                 return None,None, None,None
             colocalisation_distance = int(colocalisation_distance)
@@ -194,15 +200,8 @@ def initiate_colocalisation(
                 raise ValueError("Incorrect value for spots1")
 
         except ValueError as e :
-            
-            if str(e) == "Incorrect value for spots1" :
-                sg.popup(str(e))
+            sg.popup(str(e))
 
-            elif str(e) == "Incorrect value for spots2" :
-                sg.popup(str(e))
-
-            else :
-                sg.popup("Incorrect colocalisation distance")
         else :
             break
     return colocalisation_distance, voxel_size, spots1_key, spots2_key
