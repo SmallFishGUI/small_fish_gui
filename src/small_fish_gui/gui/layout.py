@@ -474,19 +474,19 @@ def colocalization_layout(spot_list : list, **default_values) :
         element_dict[f"radio_spots{spot_id}_load"] = sg.Radio("Load spot detection : ", group_id = spot_id, enable_events = True, key = f"radio_spots{spot_id}_load", default= (not can_use_memory) or (default_values.get(f"radio_spots{spot_id}_load")))
         
         element_dict[f"spots{spot_id}_browse"] = [
-            sg.Input(size=20, key= f"spots{spot_id}_browse", default_text=default_values.get(f"spots{spot_id}_browse")),
-            sg.FileBrowse(key=f"spots{spot_id}_browsebutton", initial_folder=default_values.setdefault(f"spots{spot_id}_browsebutton", default_values["working_directory"])),
+            sg.Input(size=20, key= f"spots{spot_id}_browse", default_text=default_values.get(f"spots{spot_id}_browse"), disabled=can_use_memory and not default_values.get(f"radio_spots{spot_id}_load")),
+            sg.FileBrowse(key=f"spots{spot_id}_browsebutton", initial_folder=default_values.setdefault(f"spots{spot_id}_browsebutton", default_values["working_directory"]), disabled=can_use_memory and not default_values.get(f"radio_spots{spot_id}_load")),
         ]
         element_dict[f"spots{spot_id}_voxel_size"] = [
             sg.Text("voxel size"),
-            sg.Input(size= 5, key= f"z_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"z_voxel_size_spot{spot_id}", "z")),
-            sg.Input(size= 5, key= f"y_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"y_voxel_size_spot{spot_id}", "y")),
-            sg.Input(size= 5, key= f"x_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"x_voxel_size_spot{spot_id}", "x")),
+            sg.Input(size= 5, key= f"z_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"z_voxel_size_spot{spot_id}", "z"), disabled=can_use_memory and not default_values.get(f"radio_spots{spot_id}_load")),
+            sg.Input(size= 5, key= f"y_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"y_voxel_size_spot{spot_id}", "y"), disabled=can_use_memory and not default_values.get(f"radio_spots{spot_id}_load")),
+            sg.Input(size= 5, key= f"x_voxel_size_spot{spot_id}", default_text= default_values.setdefault(f"x_voxel_size_spot{spot_id}", "x"), disabled=can_use_memory and not default_values.get(f"radio_spots{spot_id}_load")),
         ]
         
         #Ref for updating
         element_dict[f"options_spots{spot_id}_memory"] = sg.Col(
-            [[sg.DropDown(values=[""] + spot_list, key=f"spots{spot_id}_dropdown", size= 10, disabled= len(spot_list) == 0, default_value= default_values.setdefault(f"spots{spot_id}_dropdown", ""))]]
+            [[sg.DropDown(values=[""] + spot_list, key=f"spots{spot_id}_dropdown", size= 10, disabled= not can_use_memory or default_values.get(f"radio_spots{spot_id}_load"), default_value= default_values.setdefault(f"spots{spot_id}_dropdown", ""))]]
             )
         element_dict[f"options_spots{spot_id}_load"] = sg.Col(
             [element_dict[f"spots{spot_id}_browse"], element_dict[f"spots{spot_id}_voxel_size"]]

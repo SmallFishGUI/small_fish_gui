@@ -319,10 +319,12 @@ def coloc_prompt(spot_list : list, **default_values) :
         elif "radio_spots" in event :
             spot_id = 1 if "1" in event else 2
             is_memory = "memory" in event
-            for row in element_dict[f"options_spots{spot_id}_memory"] :
-                for elmnt in row : elmnt.update(disabled= not is_memory)
-            for row in element_dict[f"options_spots{spot_id}_load"] :
-                for elmnt in row : elmnt.update(disabled= is_memory)
+            for row in element_dict[f"options_spots{spot_id}_memory"].Rows :
+                for elmnt in row : 
+                    if not isinstance(elmnt, sg.Text): elmnt.update(disabled= not is_memory)
+            for row in element_dict[f"options_spots{spot_id}_load"].Rows :
+                for elmnt in row : 
+                    if not isinstance(elmnt, sg.Text): elmnt.update(disabled= is_memory)
 
         elif event == 'Ok' :
             if element_dict["radio_spots1_load"].get() :
