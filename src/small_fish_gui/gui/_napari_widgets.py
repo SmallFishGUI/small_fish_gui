@@ -543,6 +543,7 @@ class SpotDetector(NapariWidget) :
         ) :
         self.image = image
         self.voxel_size = voxel_size
+        self.dim = len(voxel_size)
         self.default_threshold = default_threshold
         self.spot_radius = default_spot_size
         self.kernel_size = default_kernel_size
@@ -606,24 +607,39 @@ class SpotDetector(NapariWidget) :
                 if not all(minimum_distance) : minimum_distance = None #any value set to 0
 
             do_update = False
-            if spot_radius != self.spot_radius :
-                self.spot_radius = spot_radius
+            if spot_radius is None :
+                self.spot_radius = None
+            elif spot_radius != self.spot_radius :
+                print("spot_radius")
+                self.spot_radius = spot_radius if not all([i == 0 for i in spot_radius]) else None
                 do_update = True
-            if kernel_size != self.kernel_size :
-                self.kernel_size = kernel_size
+            if kernel_size is None :
+                self.kernel_size = None
+            elif kernel_size != self.kernel_size :
+                print("kernel_size")
+                self.kernel_size = kernel_size if not all([i == 0 for i in spot_radius]) else None
                 do_update = True
-            if minimum_distance != self.min_distance :
-                self.min_distance = minimum_distance
+            if minimum_distance is None :
+                self.min_distance = None
+            elif minimum_distance != self.min_distance :
+                print("distance")
+                self.min_distance = minimum_distance if not all([i == 0 for i in spot_radius]) else None
                 do_update = True
-            if do_update :
-                self._update_filtered_image()
             
-            spots = spots_thresholding(
-            image=self.filtered_image,
-            mask_local_max=self.local_maxima,
-            threshold=threshold
-            )[0]
-    
+            try :
+                if do_update :
+                    print("Re-computing filtered image with new parameters.")
+                    self._update_filtered_image()
+
+                spots = spots_thresholding(
+                image=self.filtered_image,
+                mask_local_max=self.local_maxima,
+                threshold=threshold
+                )[0]
+            except ValueError as e :
+                print(str(e))
+
+
             scale = compute_anisotropy_coef(self.voxel_size)
     
             spot_layer_args = {
@@ -646,12 +662,43 @@ class SpotDetector(NapariWidget) :
                 "blending" : 'additive',
                 "name" : "filtered image"
             }
-            
+
             return [
-                (self.filtered_image, filtered_image_layer_args, 'image'),
-                (spots, spot_layer_args, 'points')
-                ]
+                    (self.filtered_image, filtered_image_layer_args, 'image'),
+                    (spots, spot_layer_args, 'points')
+                    ]
+
         return find_spots
+
+    def get_detection_parameters(self) :
+        detection_parameters = {"threshold" : self.widget.threshold.value}
+        if self.spot_radius is not None :
+            detection_parameters.update({
+            "spot_size" : self.spot_radius,
+            "spot_size_z" :  self.spot_radius[0] if self.dim == 3 else None,
+            "spot_size_y" :  self.spot_radius[0 + (self.dim==3)],
+            "spot_size_x" :  self.spot_radius[1 + (self.dim==3)]
+            })
+        if self.kernel_size is not None :
+            detection_parameters.update({
+            "log_kernel_size" : self.kernel_size,
+            "log_kernel_size_z" : self.kernel_size[0] if self.dim == 3 else None,
+            "log_kernel_size_y" : self.kernel_size[0 + (self.dim==3)],
+            "log_kernel_size_x" : self.kernel_size[1 + (self.dim==3)]
+            })
+        if self.min_distance is not None :
+            detection_parameters.update({
+            "minimum_distance" : self.min_distance,
+            "minimum_distance" : self.min_distance[0] if self.dim == 3 else None,
+            "minimum_distance" : self.min_distance[0 + (self.dim==3)],
+            "minimum_distance" : self.min_distance[1 + (self.dim==3)],
+            })
+
+        return detection_parameters
+        
+        
+
+
 
 class DenseRegionDeconvolver(NapariWidget) :
     """
@@ -736,11 +783,14 @@ class DenseRegionDeconvolver(NapariWidget) :
             if beta != self.beta :
                 self.beta = beta
                 do_update=True
-            if do_update : self.update_dense_regions()
+            if do_update : 
+                print("Updating dense regions...")
+                self.update_dense_regions()
             self.alpha = alpha
             self.gamma = gamma
             self.kernel_size = kernel_size
 
+            print("Decomposing dense regions...")
             spots, _dense_region, _reference_spot = detection.decompose_dense(
                 image= self.image, 
                 spots= self.spots.data, 
@@ -774,6 +824,13 @@ class DenseRegionDeconvolver(NapariWidget) :
 
             return [(self.dense_regions, dense_region_args, 'labels'), (spots, spot_layer_args, 'points')]
         return dense_region_deconvolution
+
+    def get_detection_parameters(self) :
+        return {
+            "alpha" : self.alpha,
+            "beta" : self.beta,
+            "gamma" : self.gamma
+        }
 
 
 class BackgroundRemover(NapariWidget) :
@@ -815,6 +872,7 @@ class BackgroundRemover(NapariWidget) :
             max_trial : int = 100,
         )-> LayerDataTuple :
 
+            print("Substracting background, wait ....")
             self.gui = remove_background
 
             if os.path.isfile(background_path) :
@@ -831,7 +889,7 @@ class BackgroundRemover(NapariWidget) :
                 max_trials=max_trial
             )
 
-
+            print("Done.")
             return (result, self.signal_args, 'image')
         return remove_background
     

@@ -246,7 +246,7 @@ def interactive_detection(
     
     assert any([interactive_threshold, do_background_removal, dense_region_deconvolution]), "Wrong code path"
 
-
+    print("Preparing Napari viewer...")
     Viewer = napari.Viewer(title= "Small fish - Threshold selector", ndisplay=2, show=True)
     scale = compute_anisotropy_coef(voxel_size)
     image_layer = Viewer.add_image(
@@ -257,14 +257,16 @@ def interactive_detection(
         scale= scale,
         blending= 'additive'
     )
-    
-    if True :
-        background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
-        background_widgets = widgets.Container(widgets=[background_remover.widget, background_remover.reset_widget], labels=False)
-        Viewer.window.add_dock_widget(background_widgets, name='background_remover')
 
+    #Background remoer    
+    background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
+    background_widgets = widgets.Container(widgets=[background_remover.widget, background_remover.reset_widget], labels=False)
+    Viewer.window.add_dock_widget(background_widgets, name='background_remover')
+
+    #Spot detection
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
+    print("Running spot detection...")
     spot_detector.widget() #First occurence with auto or entered threshold.
     
     spots_layer = Viewer.layers['single spots']
@@ -280,13 +282,18 @@ def interactive_detection(
 
     napari.run()
 
+    updated_parameters = {}
+    updated_parameters.update(spot_detector.get_detection_parameters())
+    if dense_region_deconvolution : updated_parameters.update(dense_region_deconvolver.get_detection_parameters())
+    signal = Viewer.layers['raw signal']
+
     spots = Viewer.layers['single spots'].data.astype(np.int32)
     if len(spots) == 0 :
         pass
     else :
         threshold = Viewer.layers['single spots'].properties.get('threshold')[0]
 
-    return spots, threshold
+    return spots, signal, updated_parameters
 
 
 

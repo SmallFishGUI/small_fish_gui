@@ -98,7 +98,7 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
         nucleus_signal = get_nucleus_signal(image, other_image, user_parameters)
         
         try : # Catch error raised if user enter a spot size too small compare to voxel size
-            user_parameters, frame_result, spots, clusters, spots_cluster_id = launch_detection(
+            user_parameters, frame_result, spots, clusters, spots_cluster_id, image = launch_detection(
                 image,
                 other_image,
                 user_parameters,

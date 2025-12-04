@@ -623,7 +623,7 @@ def launch_detection(
     do_clustering = user_parameters['do_cluster_computation']
 
     if user_parameters['show_interactive_threshold_selector'] :
-        spots, threshold = interactive_detection(
+        spots, image, updated_parameters = interactive_detection(
             image=image,
             voxel_size=user_parameters['voxel_size'],
             interactive_threshold=True,
@@ -640,6 +640,9 @@ def launch_detection(
             gamma = user_parameters['gamma'],
             other_image = other_image if user_parameters['is_multichannel'] else None,
         )
+
+        user_parameters.update(updated_parameters)
+
     else :
         spots, threshold  = detect_spots(image, user_parameters, hide_loading = hide_loading)
             
@@ -684,7 +687,7 @@ def launch_detection(
     post_detection_dict = launch_post_detection(image, spots, user_parameters, hide_loading = hide_loading)
     fov_result.update(post_detection_dict)
     
-    return user_parameters, fov_result, spots, clusters, spots_cluster_id
+    return user_parameters, fov_result, spots, clusters, spots_cluster_id, image
             
 
 def launch_features_computation(

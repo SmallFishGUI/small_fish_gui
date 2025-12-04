@@ -64,6 +64,7 @@ class pipeline_parameters(TypedDict) :
             do_segmentation : bool
             shape : Tuple[int,int,int,int,int]
             save_segmentation_visuals : bool
+            segment_only_nuclei : bool
             segmentation_done : bool
             seg_control_saving_path : str
             show_interactive_threshold_selector : bool
@@ -73,7 +74,6 @@ class pipeline_parameters(TypedDict) :
             spot_size_x : int
             spot_size_y : int
             spot_size_z : int
-            segment_only_nuclei : bool
             cytoplasm_segmentation_3D : bool
             nucleus_segmentation_3D : bool
             show_napari_corrector : bool
