@@ -645,6 +645,7 @@ def launch_detection(
 
     else :
         spots, threshold  = detect_spots(image, user_parameters, hide_loading = hide_loading)
+        user_parameters['threshold'] = threshold
             
         if do_dense_region_deconvolution : 
             spots = launch_dense_region_deconvolution(image, spots, user_parameters, hide_loading = hide_loading)
@@ -656,8 +657,6 @@ def launch_detection(
     else : 
         clusters = None
         spots_cluster_id = None
-
-    user_parameters['threshold'] = threshold
 
     if user_parameters['show_napari_corrector'] :
 

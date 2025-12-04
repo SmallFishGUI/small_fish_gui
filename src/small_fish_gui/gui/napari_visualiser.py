@@ -285,7 +285,7 @@ def interactive_detection(
     updated_parameters = {}
     updated_parameters.update(spot_detector.get_detection_parameters())
     if dense_region_deconvolution : updated_parameters.update(dense_region_deconvolver.get_detection_parameters())
-    signal = Viewer.layers['raw signal']
+    signal = Viewer.layers['raw signal'].data
 
     spots = Viewer.layers['single spots'].data.astype(np.int32)
     if len(spots) == 0 :
