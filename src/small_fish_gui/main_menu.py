@@ -121,6 +121,7 @@ while True : #Break this loop to close small_fish
 
         elif event == "settings" :
             open_settings()
+            user_parameters.update(get_settings())
 
         elif event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT :
             answ  = sg.popup_ok_cancel("Do you want to close Small Fish ?")
