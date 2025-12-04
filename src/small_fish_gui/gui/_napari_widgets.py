@@ -787,12 +787,12 @@ class BackgroundRemover(NapariWidget) :
         self.other_image = other_image
         self.signal = signal.copy()
         self.voxel_size = voxel_size
+        self.scale = compute_anisotropy_coef(self.voxel_size)
 
         self.signal_args = {
-                "contrast_limits" : [result.min(), result.max()],
                 "name" : "raw signal",
                 "colormap" : 'green',
-                "scale" : scale,
+                "scale" : self.scale,
                 "blending" : 'additive'
             }
 
@@ -801,11 +801,12 @@ class BackgroundRemover(NapariWidget) :
         self.reset_widget = self._create_reset_button()
 
     def disable_channel(self) :
-        self.gui.channel.enabled = False
+        pass
+        self.widget.channel.enabled = False
 
     def _create_widget(self) :
         @magicgui(
-            channel = {'min' : 0, 'max' : self.other_image.shape[0] - 1 },
+            channel = {'min' : 0, 'max' : 0 if self.other_image is None else self.other_image.shape[0] - 1},
             max_trial = {'min' : 0},
         )
         def remove_background(
@@ -817,7 +818,7 @@ class BackgroundRemover(NapariWidget) :
             self.gui = remove_background
 
             if os.path.isfile(background_path) :
-                background = open_image(background_path)
+                background = open_image(str(background_path))
             elif self.other_image is None :
                 raise FileNotFoundError(f"{background_path} is not a valid file.")
             else :
@@ -825,12 +826,11 @@ class BackgroundRemover(NapariWidget) :
             if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
 
             result, score = remove_autofluorescence_RANSACfit(
-                signal=self.signal,
+                signal=self.signal.copy(),
                 background=background,
                 max_trials=max_trial
             )
 
-            scale = compute_anisotropy_coef(self.voxel_size)
 
             return (result, self.signal_args, 'image')
         return remove_background
@@ -840,3 +840,4 @@ class BackgroundRemover(NapariWidget) :
         @magicgui(call_button= "Reset signal")
         def reset_signal() -> LayerDataTuple :
             return (self.signal, self.signal_args, 'image')
+        return reset_signal

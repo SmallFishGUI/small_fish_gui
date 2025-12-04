@@ -260,7 +260,8 @@ def interactive_detection(
     
     if True :
         background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
-        Viewer.window.add_dock_widget(background_remover.widget, name='background_remover')
+        background_widgets = widgets.Container(widgets=[background_remover.widget, background_remover.reset_widget], labels=False)
+        Viewer.window.add_dock_widget(background_widgets, name='background_remover')
 
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
