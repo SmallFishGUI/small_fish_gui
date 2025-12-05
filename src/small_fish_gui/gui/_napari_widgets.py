@@ -599,12 +599,14 @@ class SpotDetector(NapariWidget) :
             if (np.array(minimum_distance) < 0).any() :
                 raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
             
+            print("kernel_size before update : ", kernel_size)
+
             if isinstance(spot_radius, tuple) :
-                if not all(spot_radius) : self.spot_radius = None #any value set to 0
+                if not all(spot_radius) : spot_radius = None #any value set to 0
             if isinstance(kernel_size, tuple) :
-                if not all(kernel_size) : self.kernel_size = None #any value set to 0
+                if not all(kernel_size) : kernel_size = None #any value set to 0
             if isinstance(minimum_distance, tuple) :
-                if not all(minimum_distance) : self.min_distance = None #any value set to 0
+                if not all(minimum_distance) : minimum_distance = None #any value set to 0
 
             do_update = False
             if spot_radius != self.spot_radius :
