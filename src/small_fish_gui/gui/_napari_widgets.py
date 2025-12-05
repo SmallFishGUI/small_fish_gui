@@ -600,35 +600,32 @@ class SpotDetector(NapariWidget) :
                 raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
             
             if isinstance(spot_radius, tuple) :
-                if not all(spot_radius) : spot_radius = None #any value set to 0
+                if not all(spot_radius) : self.spot_radius = None #any value set to 0
             if isinstance(kernel_size, tuple) :
-                if not all(kernel_size) : kernel_size = None #any value set to 0
+                if not all(kernel_size) : self.kernel_size = None #any value set to 0
             if isinstance(minimum_distance, tuple) :
-                if not all(minimum_distance) : minimum_distance = None #any value set to 0
+                if not all(minimum_distance) : self.min_distance = None #any value set to 0
 
             do_update = False
-            if spot_radius is None :
-                self.spot_radius = None
-            elif spot_radius != self.spot_radius :
+            if spot_radius != self.spot_radius :
                 print("spot_radius")
-                self.spot_radius = spot_radius if not all([i == 0 for i in spot_radius]) else None
+                self.spot_radius = spot_radius
                 do_update = True
-            if kernel_size is None :
-                self.kernel_size = None
-            elif kernel_size != self.kernel_size :
+            if kernel_size != self.kernel_size :
                 print("kernel_size")
-                self.kernel_size = kernel_size if not all([i == 0 for i in spot_radius]) else None
+                self.kernel_size = kernel_size
                 do_update = True
-            if minimum_distance is None :
-                self.min_distance = None
-            elif minimum_distance != self.min_distance :
+            if minimum_distance != self.min_distance :
                 print("distance")
-                self.min_distance = minimum_distance if not all([i == 0 for i in spot_radius]) else None
+                self.min_distance = minimum_distance
                 do_update = True
             
             try :
                 if do_update :
                     print("Re-computing filtered image with new parameters.")
+                    print("spot_radius : ", self.spot_radius)
+                    print("kernel_size : ", self.kernel_size)
+                    print("min_distance : ", self.min_distance)
                     self._update_filtered_image()
 
                 spots = spots_thresholding(
