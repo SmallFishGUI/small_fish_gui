@@ -251,29 +251,30 @@ def interactive_detection(
     scale = compute_anisotropy_coef(voxel_size)
     image_layer = Viewer.add_image(
         data= image,
-        contrast_limits= [image.min(), image.max()],
+        contrast_limits= [image.min(), image.max()+1], #Security if max = min
         name= "raw signal",
         colormap= 'green',
         scale= scale,
         blending= 'additive'
     )
 
-    #Background remoer    
+    #Background remover
     background_remover = _interactive_background_removal(image, voxel_size, **kwargs)
     background_widgets = widgets.Container(widgets=[background_remover.widget, background_remover.reset_widget], labels=False)
     Viewer.window.add_dock_widget(background_widgets, name='background_remover')
 
     #Spot detection
     spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
+    background_remover.events.signal_updated.connect(spot_detector.on_background_updated)
+
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
-    print("Running spot detection...")
     spot_detector.widget() #First occurence with auto or entered threshold.
     
     spots_layer = Viewer.layers['single spots']
 
     if dense_region_deconvolution :
         dense_region_deconvolver = _interactive_spot_decomposition(
-            image, 
+            image_layer, 
             voxel_size,
             spots = spots_layer, 
             **kwargs
@@ -288,10 +289,6 @@ def interactive_detection(
     signal = Viewer.layers['raw signal'].data
 
     spots = Viewer.layers['single spots'].data.astype(np.int32)
-    if len(spots) == 0 :
-        pass
-    else :
-        threshold = Viewer.layers['single spots'].properties.get('threshold')[0]
 
     return spots, signal, updated_parameters
 
@@ -322,7 +319,7 @@ def _interactive_threshold_selection(image : np.ndarray, voxel_size : tuple, **k
 
     return spot_detector
 
-def _interactive_spot_decomposition(image : np.ndarray, voxel_size : tuple, **kwargs) -> NapariWidget :
+def _interactive_spot_decomposition(image : Image, voxel_size : tuple, **kwargs) -> NapariWidget :
     key_error = "Missing keys for interactive threshold selection, required keys are : 'spots', 'deconvolution_spot_radius','deconvolution_kernel_size','alpha', 'beta', 'gamma'"
     if not all([key for key in kwargs.keys()]) : raise ValueError(key_error)
     type_dict = {

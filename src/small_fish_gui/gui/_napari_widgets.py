@@ -10,9 +10,10 @@ from skimage.segmentation import find_boundaries
 from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
 
 from napari.layers import Labels, Points, Image
+from napari.utils.events import Event
 from magicgui import magicgui
 from magicgui.widgets import SpinBox, Container
-from bigfish.detection import spots_thresholding
+from bigfish.detection import spots_thresholding, automated_threshold_setting
 from napari.types import LayerDataTuple
 
 from abc import ABC, abstractmethod
@@ -22,6 +23,9 @@ from ..utils import compute_anisotropy_coef
 from AF_eraser import remove_autofluorescence_RANSACfit
 from pathlib import Path
 from ..interface import open_image
+
+class Events :
+    pass
 
 class NapariWidget(ABC) :
     """
@@ -550,6 +554,8 @@ class SpotDetector(NapariWidget) :
         self.min_distance = default_min_distance
         self._update_filtered_image()
         self.maximum_threshold = self.filtered_image.max()
+        self.do_update = False
+        
         super().__init__()
 
     def _update_filtered_image(self) :
@@ -577,11 +583,10 @@ class SpotDetector(NapariWidget) :
             tuple_hint = Tuple[int,int,int]
 
         @magicgui(
-            threshold = {"widget_type" : SpinBox, "min" : 1, "value" : self.default_threshold, "max" : self.filtered_image.max()},
+            threshold = {"widget_type" : SpinBox, "min" : 0, "value" : self.default_threshold},
             spot_radius = {"label" : "spot radius(zyx)", "value" : self.spot_radius},
             kernel_size = {"label" : "LoG kernel size(zyx)"},
             minimum_distance = {"label" : "Distance min between spots"},
-
         )
         def find_spots(
             threshold : int,
@@ -599,8 +604,6 @@ class SpotDetector(NapariWidget) :
             if (np.array(minimum_distance) < 0).any() :
                 raise ValueError("Spot radius : set value > 0 (0 to ignore argument)")
             
-            print("kernel_size before update : ", kernel_size)
-
             if isinstance(spot_radius, tuple) :
                 if not all(spot_radius) : spot_radius = None #any value set to 0
             if isinstance(kernel_size, tuple) :
@@ -608,27 +611,32 @@ class SpotDetector(NapariWidget) :
             if isinstance(minimum_distance, tuple) :
                 if not all(minimum_distance) : minimum_distance = None #any value set to 0
 
-            do_update = False
             if spot_radius != self.spot_radius :
-                print("spot_radius")
                 self.spot_radius = spot_radius
-                do_update = True
+                self.do_update = True
             if kernel_size != self.kernel_size :
-                print("kernel_size")
                 self.kernel_size = kernel_size
-                do_update = True
+                self.do_update = True
             if minimum_distance != self.min_distance :
-                print("distance")
                 self.min_distance = minimum_distance
-                do_update = True
+                self.do_update = True
             
             try :
-                if do_update :
-                    print("Re-computing filtered image with new parameters.")
-                    print("spot_radius : ", self.spot_radius)
-                    print("kernel_size : ", self.kernel_size)
-                    print("min_distance : ", self.min_distance)
+                if self.do_update :
+                    print("Re-computing filtered image with new parameters : ...", end="", flush=True)
                     self._update_filtered_image()
+                    print("\rRe-computing filtered image with new parameters : done")
+                    self.do_update = False
+                
+                if threshold == 0 :
+                    print("Computing automated threshold : ...", end="", flush=True)
+                    threshold = automated_threshold_setting(
+                        self.filtered_image,
+                        mask_local_max=self.local_maxima
+                    )
+                    self.widget.threshold.value = threshold
+                    print("\rComputing automated threshold : done.")
+
 
                 spots = spots_thresholding(
                 image=self.filtered_image,
@@ -650,7 +658,6 @@ class SpotDetector(NapariWidget) :
                 'opacity' : 0.7, 
                 'blending' : 'translucent', 
                 'name': 'single spots',
-                'features' : {'threshold' : threshold},
                 'visible' : True,
                 }
 
@@ -668,6 +675,12 @@ class SpotDetector(NapariWidget) :
                     ]
 
         return find_spots
+
+    def on_background_updated():
+        print("Background was updated — recomputing filtered image...")
+        spot_detector._update_filtered_image()
+
+
 
     def get_detection_parameters(self) :
         detection_parameters = {"threshold" : self.widget.threshold.value}
@@ -728,7 +741,7 @@ class DenseRegionDeconvolver(NapariWidget) :
 
     def update_dense_regions(self) :
         dense_regions, spot_out_regions,max_size = detection.get_dense_region(
-            image=self.image,
+            image=self.image.data,
             spots=self.spots.data,
             voxel_size = self.voxel_size,
             beta=self.beta,
@@ -736,7 +749,7 @@ class DenseRegionDeconvolver(NapariWidget) :
         )
         del spot_out_regions,max_size
 
-        mask = np.zeros(shape=self.image.shape, dtype= np.int16)
+        mask = np.zeros(shape=self.image.data.shape, dtype= np.int16)
         for label, region in enumerate(dense_regions) :
             reg_im = region.image
             coordinates = np.argwhere(reg_im)
@@ -775,23 +788,24 @@ class DenseRegionDeconvolver(NapariWidget) :
             if isinstance(kernel_size,tuple) :
                 if not all(kernel_size) : kernel_size = None #any value set to 0
 
-            do_update = False
+            self.do_update = False
             if spot_radius != self.spot_radius :
                 self.spot_radius = spot_radius
-                do_update = True
+                self.do_update = True
             if beta != self.beta :
                 self.beta = beta
-                do_update=True
-            if do_update : 
-                print("Updating dense regions...")
+                self.do_update=True
+            if self.do_update : 
+                print("Updating dense regions...", end="", flush=True)
                 self.update_dense_regions()
+                print("\rUpdating dense regions : done.")
             self.alpha = alpha
             self.gamma = gamma
             self.kernel_size = kernel_size
 
-            print("Decomposing dense regions...")
+            print("Decomposing dense regions...", end="", flush=True)
             spots, _dense_region, _reference_spot = detection.decompose_dense(
-                image= self.image, 
+                image= self.image.data, 
                 spots= self.spots.data, 
                 voxel_size=self.voxel_size, 
                 spot_radius=self.spot_radius, 
@@ -800,6 +814,7 @@ class DenseRegionDeconvolver(NapariWidget) :
                 beta=self.beta, 
                 gamma=self.gamma
             )
+            print("\rDecomposing dense regions : done")
             del _dense_region, _reference_spot
 
             scale = compute_anisotropy_coef(self.voxel_size)
@@ -852,12 +867,14 @@ class BackgroundRemover(NapariWidget) :
                 "blending" : 'additive'
             }
 
+        self.events = Events()
+        self.events.signal_updated = Event("signal_updated")
+
         super().__init__()
         if self.other_image is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
         self.reset_widget = self._create_reset_button()
 
     def disable_channel(self) :
-        pass
         self.widget.channel.enabled = False
 
     def _create_widget(self) :
@@ -871,7 +888,7 @@ class BackgroundRemover(NapariWidget) :
             max_trial : int = 100,
         )-> LayerDataTuple :
 
-            print("Substracting background, wait ....")
+            print("Substracting background, it can take a moment ....", end="", flush=True)
             self.gui = remove_background
 
             if os.path.isfile(background_path) :
@@ -888,7 +905,9 @@ class BackgroundRemover(NapariWidget) :
                 max_trials=max_trial
             )
 
-            print("Done.")
+            print("\rBackground substraction done.")
+            self.events.signal_updated()
+            
             return (result, self.signal_args, 'image')
         return remove_background
     
