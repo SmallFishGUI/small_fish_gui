@@ -657,8 +657,10 @@ class SpotDetector(NapariWidget) :
         else :
             tuple_hint = Tuple[int,int,int]
 
+        default_threshold = min(self.default_threshold, self.filtered_image.max())
+
         @magicgui(
-            threshold = {"widget_type" : SpinBox, "min" : 0, "value" : self.default_threshold},
+            threshold = {"widget_type" : SpinBox, "min" : 0, "value" : default_threshold, "max" : self.filtered_image.max() + 1},
             spot_radius = {"label" : "spot radius(zyx)", "value" : self.spot_radius},
             kernel_size = {"label" : "LoG kernel size(zyx)"},
             minimum_distance = {"label" : "Distance min between spots"},
@@ -700,6 +702,7 @@ class SpotDetector(NapariWidget) :
                 if self.do_update :
                     self._update_filtered_image()
                     self.do_update = False
+                    self.widget.threshold.max = self.filtered_image.max() + 1
                 
                 print("Computing automated threshold : ...", end="", flush=True)
                 if threshold == 0 :
@@ -734,7 +737,6 @@ class SpotDetector(NapariWidget) :
                 }
 
             filtered_image_layer_args = {
-                "contrast_limits" :  [self.filtered_image.min(), self.filtered_image.max()+1],
                 "colormap" :  'gray',
                 "scale" : scale,
                 "blending" : 'additive',

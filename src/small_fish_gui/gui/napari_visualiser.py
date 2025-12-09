@@ -251,7 +251,6 @@ def interactive_detection(
     scale = compute_anisotropy_coef(voxel_size)
     image_layer = Viewer.add_image(
         data= image,
-        contrast_limits= [image.min(), image.max()+1], #Security if max = min
         name= "raw signal",
         colormap= 'green',
         scale= scale,
