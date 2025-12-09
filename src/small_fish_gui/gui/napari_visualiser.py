@@ -264,8 +264,7 @@ def interactive_detection(
     Viewer.window.add_dock_widget(background_widgets, name='background_remover')
 
     #Spot detection
-    spot_detector = _interactive_threshold_selection(image, voxel_size, **kwargs)
-    background_remover.events.signal_updated.connect(spot_detector.on_background_updated)
+    spot_detector = _interactive_threshold_selection(image, voxel_size, background_remover_instance= background_remover, **kwargs)
 
     Viewer.window.add_dock_widget(spot_detector.widget, name='threshold_selector')
     spot_detector.widget() #First occurence with auto or entered threshold.
@@ -314,7 +313,8 @@ def _interactive_threshold_selection(image : np.ndarray, voxel_size : tuple, **k
         default_kernel_size=kwargs["default_kernel_size"],
         default_min_distance=kwargs["default_min_distance"],
         default_spot_size=kwargs["default_spot_radius"],
-        voxel_size=voxel_size
+        voxel_size=voxel_size,
+        background_remover_instance= kwargs['background_remover_instance']
     )
 
     return spot_detector

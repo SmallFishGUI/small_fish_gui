@@ -10,7 +10,7 @@ from skimage.segmentation import find_boundaries
 from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
 
 from napari.layers import Labels, Points, Image
-from napari.utils.events import Event
+from napari.utils.events import Event, EmitterGroup
 from magicgui import magicgui
 from magicgui.widgets import SpinBox, Container
 from bigfish.detection import spots_thresholding, automated_threshold_setting
@@ -24,8 +24,6 @@ from AF_eraser import remove_autofluorescence_RANSACfit
 from pathlib import Path
 from ..interface import open_image
 
-class Events :
-    pass
 
 class NapariWidget(ABC) :
     """
@@ -530,6 +528,79 @@ class ClusterCleaner(ClusterWizard) :
 
 
 #Detection widgets
+class BackgroundRemover(NapariWidget) :
+    def __init__(
+        self, 
+        signal : Image, 
+        voxel_size : tuple,
+        other_image : np.ndarray = None, 
+        ) :
+        
+        self.other_image = other_image
+        self.signal_layer = signal
+        self.signal_data_raw = np.array(signal.data)
+        self.voxel_size = voxel_size
+        self.scale = compute_anisotropy_coef(self.voxel_size)
+
+        self.signal_args = {
+                "name" : "raw signal",
+                "colormap" : 'green',
+                "scale" : self.scale,
+                "blending" : 'additive'
+            }
+
+        self.events = EmitterGroup(source=self.signal_layer, auto_connect=False, background_substraction_event = None)
+
+        super().__init__()
+        if self.other_image is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
+        self.reset_widget = self._create_reset_button()
+
+    def disable_channel(self) :
+        self.widget.channel.enabled = False
+
+    def _create_widget(self) :
+        @magicgui(
+            channel = {'min' : 0, 'max' : 0 if self.other_image is None else self.other_image.shape[0] - 1},
+            max_trial = {'min' : 0},
+        )
+        def remove_background(
+            background_path : Path,
+            channel : int,
+            max_trial : int = 100,
+        )-> LayerDataTuple :
+
+            print("Substracting background ...", end="", flush=True)
+            self.gui = remove_background
+
+            if os.path.isfile(background_path) :
+                background = open_image(str(background_path))
+            elif self.other_image is None :
+                raise FileNotFoundError(f"{background_path} is not a valid file.")
+            else :
+                background = self.other_image[channel]
+            if not background.shape == self.signal_data_raw.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal_data_raw.shape} ; {background.shape}")
+
+            result, score = remove_autofluorescence_RANSACfit(
+                signal=self.signal_data_raw.copy(),
+                background=background,
+                max_trials=max_trial
+            )
+
+            print("\rBackground substraction done.")
+            self.events.background_substraction_event(new_signal_array = result)
+            
+            return (result, self.signal_args, 'image')
+        return remove_background
+    
+    def _create_reset_button(self) :
+
+        @magicgui(call_button= "Reset signal")
+        def reset_signal() -> LayerDataTuple :
+            self.events.background_substraction_event(new_signal_array = self.signal_data_raw)
+            return (self.signal_data_raw, self.signal_args, 'image')
+        return reset_signal
+
+
 class SpotDetector(NapariWidget) :
     """
     Widget aimed at helping user to set detection parameters : threshold, spot radius and so on...
@@ -543,8 +614,9 @@ class SpotDetector(NapariWidget) :
         default_kernel_size : tuple,
         default_min_distance : tuple,
         voxel_size : tuple,
-
+        background_remover_instance : BackgroundRemover,
         ) :
+        
         self.image = image
         self.voxel_size = voxel_size
         self.dim = len(voxel_size)
@@ -557,15 +629,18 @@ class SpotDetector(NapariWidget) :
         self.do_update = False
         
         super().__init__()
+        background_remover_instance.events.background_substraction_event.connect(self.on_background_updated)
 
     def _update_filtered_image(self) :
 
+        print("Re-computing filtered image with new parameters : ...", end="", flush=True)
         self.filtered_image = _apply_log_filter(
             image=self.image,
             voxel_size=self.voxel_size,
             spot_radius=self.spot_radius,
             log_kernel_size=self.kernel_size
         )
+        print("\rRe-computing filtered image with new parameters : done")
 
         self.local_maxima = _local_maxima_mask(
             image_filtered=self.filtered_image,
@@ -623,20 +698,17 @@ class SpotDetector(NapariWidget) :
             
             try :
                 if self.do_update :
-                    print("Re-computing filtered image with new parameters : ...", end="", flush=True)
                     self._update_filtered_image()
-                    print("\rRe-computing filtered image with new parameters : done")
                     self.do_update = False
                 
+                print("Computing automated threshold : ...", end="", flush=True)
                 if threshold == 0 :
-                    print("Computing automated threshold : ...", end="", flush=True)
                     threshold = automated_threshold_setting(
                         self.filtered_image,
                         mask_local_max=self.local_maxima
                     )
                     self.widget.threshold.value = threshold
-                    print("\rComputing automated threshold : done.")
-
+                print("\rComputing automated threshold : done.")
 
                 spots = spots_thresholding(
                 image=self.filtered_image,
@@ -662,7 +734,7 @@ class SpotDetector(NapariWidget) :
                 }
 
             filtered_image_layer_args = {
-                "contrast_limits" :  [self.filtered_image.min(), self.filtered_image.max()],
+                "contrast_limits" :  [self.filtered_image.min(), self.filtered_image.max()+1],
                 "colormap" :  'gray',
                 "scale" : scale,
                 "blending" : 'additive',
@@ -676,11 +748,11 @@ class SpotDetector(NapariWidget) :
 
         return find_spots
 
-    def on_background_updated():
+    def on_background_updated(self, event):
         print("Background was updated — recomputing filtered image...")
-        spot_detector._update_filtered_image()
-
-
+        self.image = event.new_signal_array
+        self.do_update = True
+        self.widget()
 
     def get_detection_parameters(self) :
         detection_parameters = {"threshold" : self.widget.threshold.value}
@@ -846,74 +918,3 @@ class DenseRegionDeconvolver(NapariWidget) :
             "gamma" : self.gamma
         }
 
-
-class BackgroundRemover(NapariWidget) :
-    def __init__(
-        self, 
-        signal : Image, 
-        voxel_size : tuple,
-        other_image : np.ndarray = None, 
-        ) :
-        
-        self.other_image = other_image
-        self.signal = signal.copy()
-        self.voxel_size = voxel_size
-        self.scale = compute_anisotropy_coef(self.voxel_size)
-
-        self.signal_args = {
-                "name" : "raw signal",
-                "colormap" : 'green',
-                "scale" : self.scale,
-                "blending" : 'additive'
-            }
-
-        self.events = Events()
-        self.events.signal_updated = Event("signal_updated")
-
-        super().__init__()
-        if self.other_image is None : self.disable_channel() #Image stack is None when image stack is not is_multichannel
-        self.reset_widget = self._create_reset_button()
-
-    def disable_channel(self) :
-        self.widget.channel.enabled = False
-
-    def _create_widget(self) :
-        @magicgui(
-            channel = {'min' : 0, 'max' : 0 if self.other_image is None else self.other_image.shape[0] - 1},
-            max_trial = {'min' : 0},
-        )
-        def remove_background(
-            background_path : Path,
-            channel : int,
-            max_trial : int = 100,
-        )-> LayerDataTuple :
-
-            print("Substracting background, it can take a moment ....", end="", flush=True)
-            self.gui = remove_background
-
-            if os.path.isfile(background_path) :
-                background = open_image(str(background_path))
-            elif self.other_image is None :
-                raise FileNotFoundError(f"{background_path} is not a valid file.")
-            else :
-                background = self.other_image[channel]
-            if not background.shape == self.signal.shape : raise ValueError(f"Shape missmatch between signal and background : {self.signal.shape} ; {background.shape}")
-
-            result, score = remove_autofluorescence_RANSACfit(
-                signal=self.signal.copy(),
-                background=background,
-                max_trials=max_trial
-            )
-
-            print("\rBackground substraction done.")
-            self.events.signal_updated()
-            
-            return (result, self.signal_args, 'image')
-        return remove_background
-    
-    def _create_reset_button(self) :
-
-        @magicgui(call_button= "Reset signal")
-        def reset_signal() -> LayerDataTuple :
-            return (self.signal, self.signal_args, 'image')
-        return reset_signal
