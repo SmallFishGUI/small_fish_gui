@@ -657,7 +657,10 @@ class SpotDetector(NapariWidget) :
         else :
             tuple_hint = Tuple[int,int,int]
 
-        default_threshold = min(self.default_threshold, self.filtered_image.max())
+        if not self.default_threshold is None : 
+            default_threshold = min(self.default_threshold, self.filtered_image.max())
+        else :
+            default_threshold = None
 
         @magicgui(
             threshold = {"widget_type" : SpinBox, "min" : 0, "value" : default_threshold, "max" : self.filtered_image.max() + 1},
