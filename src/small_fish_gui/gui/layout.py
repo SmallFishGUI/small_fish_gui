@@ -587,7 +587,13 @@ def settings_layout(default_values : SettingsDict = get_default_settings()) :
         )
     spot_extraction_layout += [[sg.Text("spot extraction folder"), sg.Input(default_text=default_values.spot_extraction_folder, key="spot_extraction_folder", size=7) ,sg.FolderBrowse()]]
 
-    layout += [[sg.Col(image_layout)]]
+    background_removing_layout = [[sg.Text("Background removing (batch)", font="ArialBold 15")]]
+    background_removing_layout += [
+        [sg.Checkbox("Remove background :", key= "do_background_removal", default= settings.do_background_removal)],
+        [sg.Text("Background channel : "), sg.Input(settings.background_channel, key = "background_channel", size= 5)]
+        ]
+
+    layout += [[sg.Col(image_layout, vertical_alignment='top', expand_x = True), sg.Col(background_removing_layout, vertical_alignment='top', expand_x = True)]]
     layout += [[sg.Col(segmentation_layout, vertical_alignment='top', expand_x = True), sg.Col(detection_layout, vertical_alignment='top', expand_x = True)]]
     layout += [[sg.Col(deconvolution_layout, vertical_alignment='top', expand_x = True), sg.Col(clustering_layout, vertical_alignment='top', expand_x = True)]]
     layout += [[sg.Col(spot_extraction_layout, vertical_alignment='top', expand_x = True), sg.Col(coloc_layout, vertical_alignment='top', expand_x = True)]]

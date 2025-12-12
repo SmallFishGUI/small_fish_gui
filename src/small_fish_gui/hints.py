@@ -14,7 +14,7 @@ class pipeline_parameters(TypedDict) :
             beta : float
             channel_to_compute : int
             cytoplasm_cellprob_threshold : float
-            nucleus_cellprob_threshold : float
+            background_channel : int
             cytoplasm_segmentation_3D : bool
             cluster_size : int
             cytoplasm_model_name : str
@@ -26,6 +26,7 @@ class pipeline_parameters(TypedDict) :
             cytoplasm_select_slice : bool
             cytoplasm_selected_slice : int
             do_cluster_computation : bool
+            do_background_removal : bool
             do_dense_regions_deconvolution : bool
             do_spots_excel : bool
             do_spots_feather : bool
@@ -49,6 +50,7 @@ class pipeline_parameters(TypedDict) :
             minimum_distance_z : float
             is_3D_stack : bool
             is_multichannel : bool
+            nucleus_cellprob_threshold : float
             nucleus_channel_signal : int
             nucleus_segmentation_3D : bool
             nucleus_diameter : int

@@ -11,6 +11,7 @@ from typing import Tuple, Optional
 class SettingsDict(BaseModel) :
     working_directory : str
     do_background_removal : bool
+    background_channel : int
     multichannel_stack : bool
     stack_3D : bool
     detection_channel : int

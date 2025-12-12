@@ -8,7 +8,6 @@ WORKING_DIRECTORY = None
 #Image
 IS_MULTICHANNEL = False
 IS_3D_STACK = False
-DO_BACKGROUND_REMOVAL = False
 CHANNEL = 0
 NUC_CHANNEL = 1
 
@@ -48,6 +47,10 @@ SHOW_NAPARI_CORRECTOR = True
 INTERACTIVE_THRESHOLD = False
 VOXEL_SIZE = (1,2,3)
 
+#Background removal
+DO_BACKGROUND_REMOVAL = False
+BACKGROUND_CHANNEL = 0
+
 #Deconvolution
 ALPHA = 0.5
 BETA = 1.
@@ -70,6 +73,7 @@ def get_default_settings() :
     return {
         "working_directory" : os.getcwd() if WORKING_DIRECTORY is None else WORKING_DIRECTORY,
         "do_background_removal" : DO_BACKGROUND_REMOVAL,
+        "background_channel" : BACKGROUND_CHANNEL,
         "multichannel_stack" : IS_MULTICHANNEL,
         "stack_3D" : IS_3D_STACK,
         "detection_channel" : CHANNEL,
