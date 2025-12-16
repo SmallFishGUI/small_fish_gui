@@ -8,7 +8,14 @@ import FreeSimpleGUI as sg
 
 from .utils import get_elmt_from_key, create_map, call_auto_map
 from .pipeline import batch_pipeline
-from .update import update_detection_tab, update_map_tab, update_master_parameters, update_segmentation_tab, update_output_tab
+from .update import (
+    update_detection_tab, 
+    update_map_tab, 
+    update_master_parameters, 
+    update_segmentation_tab, 
+    update_output_tab,
+    update_background_removing_tab,
+    )
 from .input import load, extract_files
 from .integrity import sanity_check, check_channel_map_integrity, check_detection_parameters, check_segmentation_parameters, check_output_parameters
 from ..gui.layout import _segmentation_layout, _detection_layout, _input_parameters_layout, _ask_channel_map_layout
@@ -125,6 +132,9 @@ def batch_promp(
     detection_keys_to_hide = ['do_spots_csv', 'do_spots_excel', 'spots_filename','spots_extraction_folder', 'spots_extraction_folder_browse']
     detection_tab = sg.Tab("Detection", detection_layout, visible=False)
 
+    #Remove background tab
+    background_removing_tab, background_removing_event_dict = create_background_removing_tab()
+
     #Output tab
     show_batch_folder_text = sg.Text('', key= 'batch_folder_text')
     apply_output_button = sg.Button('apply', key='apply-output')
@@ -151,7 +161,7 @@ def batch_promp(
     output_tab = sg.Tab("Output", output_layout, visible=True)
 
     ##TAB GROUP
-    _tab_group = sg.TabGroup([[input_tab, map_tab, segmentation_tab, detection_tab, output_tab]], enable_events=True)
+    _tab_group = sg.TabGroup([[input_tab, map_tab, segmentation_tab, detection_tab, background_removing_tab, output_tab]], enable_events=True)
     tab_col = sg.Column( #Allow the tab to be scrollable
         [[_tab_group]],
         scrollable=True,
@@ -166,6 +176,7 @@ def batch_promp(
         "Segmentation" : segmentation_tab,
         "Detection" : detection_tab,
         "Map" : map_tab,
+        "background_removing" : background_removing_tab,
         "Output" : output_tab
     }
     
@@ -236,14 +247,13 @@ def batch_promp(
 #########################################
     
     #Hiding options for non batch mode
+    print("finalized")
     window= window.finalize()
     napari_correction_elmt.update(disabled=True)
     get_elmt_from_key(tab_dict['Input'], key= 'image_path').update(disabled=True)
     for key in seg_keys_to_hide : get_elmt_from_key(tab_dict['Segmentation'], key=key).update(disabled=True)
     for key in detection_keys_to_hide : get_elmt_from_key(tab_dict['Detection'], key=key).update(disabled=True)
     first_loop = True
-
-
 
     while True : 
         try :
@@ -437,6 +447,13 @@ def batch_promp(
                 do_segmentation=do_segmentation,
             )
 
+            update_background_removing_tab(
+                is_multichanel=is_multichanel,
+                background_removing_tab=background_removing_tab,
+                event_dict=background_removing_event_dict,
+                channel_number= None if not is_multichanel else 100
+            )
+
             update_output_tab(
                 tab_elmt=tab_dict['Output'],
                 do_segmentation=do_segmentation,
@@ -462,3 +479,28 @@ def batch_promp(
             stream_output.restore_stdout()
             window.close()
             raise e
+
+
+
+def create_background_removing_tab() :
+    settings = get_settings()
+    
+    remove_background_bool = sg.Checkbox("Remove background", default=settings.do_background_removal, key="do_background_removal")
+    channel_select = sg.Spin(initial_value=settings.background_channel, values=list(range(settings.background_channel)), key= "background_channel")
+    apply_button = sg.Button("Apply", key = "apply-background_removing")
+
+    layout = [
+        [remove_background_bool],
+        [sg.Text("RANSAC fit + substraction method is applied using selected channel as background and detection channel as signal. Resulting signal is passed for spot detection and quantification but NOT for segmentation.")],
+        [sg.Text("background channel")],
+        [apply_button]
+    ]
+
+    tab_layout = sg.Tab("Background removing", layout=layout, disabled=True)
+
+    event_dict = {
+        'remove_background_bool' : remove_background_bool,
+        'background_channel' : channel_select,
+    }
+
+    return tab_layout, event_dict

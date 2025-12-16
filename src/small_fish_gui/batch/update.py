@@ -137,6 +137,19 @@ def update_map_tab(
     automap_element.update(disabled=type(last_shape) == type(None))
     apply_element.update(disabled=type(last_shape) == type(None))
 
+def update_background_removing_tab(
+    background_removing_tab : sg.Tab,
+    event_dict : dict,
+    is_multichanel : bool,
+    channel_number : None | int
+) : 
+    print("update called...")
+    background_removing_tab.update(disabled= not is_multichanel)
+    if not channel_number is None :
+        event_dict['background_channel'].update(disabled = event_dict["remove_background_bool"].get(), values = list[range(channel_number)])
+        if not event_dict['background_channel'].value in range(channel_number) : 
+            event_dict['remove_background_bool'].value = 0
+
 def update_output_tab(
         tab_elmt : sg.Tab,
         do_segmentation,
