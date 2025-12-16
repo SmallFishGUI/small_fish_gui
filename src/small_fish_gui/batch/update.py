@@ -143,12 +143,7 @@ def update_background_removing_tab(
     is_multichanel : bool,
     channel_number : None | int
 ) : 
-    print("update called...")
-    background_removing_tab.update(disabled= not is_multichanel)
-    if not channel_number is None :
-        event_dict['background_channel'].update(disabled = event_dict["remove_background_bool"].get(), values = list[range(channel_number)])
-        if not event_dict['background_channel'].value in range(channel_number) : 
-            event_dict['remove_background_bool'].value = 0
+    background_removing_tab.update(visible= is_multichanel, disabled= not is_multichanel)
 
 def update_output_tab(
         tab_elmt : sg.Tab,

@@ -17,3 +17,5 @@ Similarly, decrease this threshold if cellpose is returning too many ill-shaped 
 MIN_SIZE_TOOLTIP = """ (int) >0 ; pixel
 Default to 15px. Minimum size for predicted regions during cytoplasm or nucleus segmentation. Smaller regions will be discarded.
 """
+
+REMOVE_BACKGROUND_TOOLTIP = """RANSAC fit + substraction method is applied using selected channel as background and detection channel as signal. \nResulting signal is passed for spot detection and quantification but NOT for segmentation."""

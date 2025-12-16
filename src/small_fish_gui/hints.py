@@ -12,6 +12,7 @@ class pipeline_parameters(TypedDict) :
             alpha : float
             anisotropy : float
             beta : float
+            background_max_trial : int
             channel_to_compute : int
             cytoplasm_cellprob_threshold : float
             background_channel : int

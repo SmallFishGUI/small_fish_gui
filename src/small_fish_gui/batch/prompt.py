@@ -19,6 +19,7 @@ from .update import (
 from .input import load, extract_files
 from .integrity import sanity_check, check_channel_map_integrity, check_detection_parameters, check_segmentation_parameters, check_output_parameters
 from ..gui.layout import _segmentation_layout, _detection_layout, _input_parameters_layout, _ask_channel_map_layout
+from ..gui.tooltips import REMOVE_BACKGROUND_TOOLTIP
 from ..interface import get_settings
 from ..hints import pipeline_parameters
 
@@ -70,7 +71,6 @@ def batch_promp(
         do_dense_regions_deconvolution_preset=preset.setdefault("do_dense_regions_deconvolution", default.do_dense_regions_deconvolution),
         do_clustering_preset= preset.setdefault("do_cluster_computation", default.do_cluster),
         do_Napari_correction=False,
-        do_background_removal_preset= preset.setdefault("do_background_removal",False),
         do_segmentation_preset= preset.setdefault("segmentation_done", False),
     )
     input_layout += [[sg.Button('Ok')]]
@@ -485,14 +485,15 @@ def batch_promp(
 def create_background_removing_tab() :
     settings = get_settings()
     
-    remove_background_bool = sg.Checkbox("Remove background", default=settings.do_background_removal, key="do_background_removal")
-    channel_select = sg.Spin(initial_value=settings.background_channel, values=list(range(settings.background_channel)), key= "background_channel")
+    remove_background_bool = sg.Checkbox("Remove background", default=settings.do_background_removal, key="do_background_removal", tooltip=REMOVE_BACKGROUND_TOOLTIP)
+    channel_select = sg.Spin(initial_value=settings.background_channel, values=list(range(1000)), key= "background_channel")
+    max_trial_select = sg.Spin(initial_value=100, values=list(range(1000)), key= "background_max_trial")
     apply_button = sg.Button("Apply", key = "apply-background_removing")
 
     layout = [
         [remove_background_bool],
-        [sg.Text("RANSAC fit + substraction method is applied using selected channel as background and detection channel as signal. Resulting signal is passed for spot detection and quantification but NOT for segmentation.")],
-        [sg.Text("background channel")],
+        [sg.Text("background channel"), channel_select],
+        [sg.Text("Max trial"), max_trial_select],
         [apply_button]
     ]
 

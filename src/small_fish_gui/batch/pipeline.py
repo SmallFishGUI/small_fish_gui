@@ -6,6 +6,7 @@ import os, traceback
 import pandas as pd
 import FreeSimpleGUI as sg
 import numpy as np
+from AF_eraser import remove_autofluorescence_RANSACfit
 
 from ..hints import pipeline_parameters
 
@@ -147,13 +148,38 @@ def batch_pipeline(
                 cytoplasm_label, nucleus_label = None,None
                 parameters['segmentation_done'] = False
 
+            #2.5 Background removal (opt)
+            print("do_background_removal : ", parameters['do_background_removal'])
+            print("is_multichannel : ", parameters['is_multichannel'])
+            if parameters["do_background_removal"] and parameters["is_multichannel"] :
+                window_print(batch_window, "Removing background....")
+                
+                _, other_image = prepare_image_detection(map_, parameters) 
+                image_stack = reorder_image_stack(map_, image)
+                signal_channel = int(parameters['channel_to_compute'])
+                background_channel = int(parameters["background_channel"])
+                
+                image= image_stack[signal_channel]
+                background = image_stack[background_channel]
+
+                result, score = remove_autofluorescence_RANSACfit(
+                    signal=image,
+                    background=background,
+                    max_trials=100
+                )
+
+
+                print("\rBackground substraction done.")
+            else :
+                image, other_image = prepare_image_detection(map_, parameters) 
+
+
             #3. Detection, deconvolution, clusterisation
             window_print(batch_window,"Detecting spots...")
             parameters = convert_parameters_types(parameters)
-            image, other_image = prepare_image_detection(map_, parameters) 
             nucleus_signal = get_nucleus_signal(image, other_image, parameters)
             try : # Catch error raised if user enter a spot size too small compare to voxel size
-                parameters, frame_result, spots, clusters, spot_cluster_id = launch_detection(
+                parameters, frame_result, spots, clusters, spot_cluster_id,_ = launch_detection(
                     image,
                     other_image,
                     parameters,
