@@ -231,15 +231,23 @@ def batch_pipeline(
 
             #5. Features computation
             window_print(batch_window,"computing features...")
+
+            if do_segmentation :
+                nucleus_label = nucleus_label if nucleus_label.ndim == 2 else np.max(nucleus_label,axis=0),
+                cytoplasm_label= cytoplasm_label if cytoplasm_label.ndim == 2 else np.max(cytoplasm_label, axis=0),
+            else :
+                nucleus_label = None
+                cell_label = None
+
             new_results_df, new_cell_results_df = launch_features_computation(
             acquisition_id=acquisition_id + last_acquisition_id,
             image=image,
             nucleus_signal = nucleus_signal,
             spots=spots,
             clusters=clusters,
-            spots_cluster_id=spot_cluster_id,
-            nucleus_label = nucleus_label if nucleus_label.ndim == 2 else np.max(nucleus_label,axis=0),
-            cell_label= cytoplasm_label if cytoplasm_label.ndim == 2 else np.max(cytoplasm_label, axis=0),
+            spots_cluster_id=spot_cluster_id,            
+            nucleus_label=nucleus_label,
+            cell_label=cytoplasm_label,
             user_parameters=parameters,
             frame_results=frame_result,
             )

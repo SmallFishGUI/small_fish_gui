@@ -146,7 +146,7 @@ def batch_promp(
     output_layout=[
         [sg.Text("Output folder", font=('bold',15), pad=(0,10))],
         [show_batch_folder_text],
-        [sg.Text("Select a folder : "), sg.FolderBrowse(initial_folder=os.getcwd(), key='output_folder', target=(1,-1))],
+        [sg.Text("Select a folder : "), sg.FolderBrowse(initial_folder=default.working_directory, key='output_folder', target=(1,-1))],
         [sg.Text("Name for batch : "), batch_name_input],
         [save_detection_box],
         [extract_spots_box],
@@ -247,7 +247,6 @@ def batch_promp(
 #########################################
     
     #Hiding options for non batch mode
-    print("finalized")
     window= window.finalize()
     napari_correction_elmt.update(disabled=True)
     get_elmt_from_key(tab_dict['Input'], key= 'image_path').update(disabled=True)
@@ -406,7 +405,8 @@ def batch_promp(
                 stream_output.restore_stdout()
 
                 window.close()
-                return results_df, cell_results_df, acquisition_id, values, False, None,None #Segmentation done : False, cell label : None, Nucleus label : None
+                preset.update(values)
+                return results_df, cell_results_df, acquisition_id, preset, False, None,None #Segmentation done : False, cell label : None, Nucleus label : None
 
 
             #End of loop

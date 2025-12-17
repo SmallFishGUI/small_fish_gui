@@ -35,7 +35,7 @@ def prepare_image_detection(map_, user_parameters) :
     assert len(image.shape) != 5 , "Time stack not supported, should never be True"
     
     if user_parameters['is_multichannel'] :
-        channel_to_compute = user_parameters['channel_to_compute']
+        channel_to_compute = int(user_parameters['channel_to_compute'])
         other_image = image.copy()
         other_image = np.delete(other_image, channel_to_compute, axis=0)
         image: np.ndarray = image[channel_to_compute]
