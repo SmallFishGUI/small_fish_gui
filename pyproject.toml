@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "small_fish_gui"
 version = "2.0.1"
 authors = [
-  { name="Slimani Floric", email="floric.slimani@live.com" },
+  { name="Slimani Floric", email="floric.slimani@live.fr" },
 ]
 description = "Small Fish is a python application for the analysis of smFish images. It provides a ready to use graphical interface to combine famous python packages for cell analysis without any need for coding."
 readme = "README.md"
@@ -17,7 +17,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-"big-fish==0.6.2",
+"big-fish-reloaded==0.6.2",
+"AF-eraser>=0.1.0",
 "cellpose>=4.0.6",
 "czifile>=2019.7.2",
 "imageio>=2.34.0",

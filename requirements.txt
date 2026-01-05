@@ -1,4 +1,5 @@
-big-fish==0.6.2
+big-fish-reloaded==0.6.2
+AF-eraser=0.1.0
 cellpose>=4.0.6
 czifile>=2019.7.2
 imageio>=2.34.0
