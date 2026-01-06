@@ -48,22 +48,27 @@ Analysis can be performed either fully interactively throught a Napari interface
 
 ### General setup
 
-If you don't have a python installation yet I would recommend the [miniconda distribution](https://docs.anaconda.com/free/miniconda/miniconda-other-installer-links/).
+If you don't have a python installation yet I would recommend the [miniconda distribution](https://docs.anaconda.com/free/miniconda/miniconda-other-installer-links/); but any distribution should work.
 
-It is higly recommanded to create a specific [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [virtual](https://docs.python.org/3.6/library/venv.html) environnement to install small fish.
+It is higly recommanded to create a specific [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [virtual](https://docs.python.org/3.9/library/venv.html) environnement to install small fish.
 
+As of version 2.0.3 Small Fish runs on python 3.12.
+
+If you are using **conda** or **miniconda**
 ```bash
-conda create -n small_fish python=3.9
+conda create -n small_fish python=3.12
 conda activate small_fish
 ```
-Then download the small_fish package : 
+
+If you are using **venv**, after installing the official python 3.12, python-venv **and** *python-tk* .
+```bash
+python3.12 -m venv python_env/small_fish
+source python_env/small_fish/bin/activate
+```
+
+Then download and install the small_fish package with : 
 ```bash
 pip install small_fish_gui
-```
-Results visualisation is achieved through *Napari* which you can install with :
-
-```bash
-pip install napari[all]
 ```
 
 ### Setting up GPU
