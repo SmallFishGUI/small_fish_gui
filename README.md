@@ -97,5 +97,8 @@ You are all set! Try it yourself or check the [get started](https://github.com/2
 ## Developement
 Bugs to fix :
 * occasional bugs when using cluster merge buttons : position of new cluster is off
+* Check that clustering works properly in interactive mode (it looks the wizard supressing empty clusters deletes also non empty clusters)
 * When using software for the first time, default configuration of working directory is set in "other_image_nucleus" resulting in an error.
 * Use of load button during co-localization quantification yields wrongs results
+* Detection layout : change do_dense_regions_decovlution showed name & put checkbox 'interactive thrshold' higher in layout
+  
