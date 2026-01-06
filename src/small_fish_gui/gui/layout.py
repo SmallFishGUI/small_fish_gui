@@ -308,12 +308,14 @@ def _segmentate_object_layout(
     options_3D = list()
     layout = []
 
-    if is_3D_stack :
-        radio_2D_seg = sg.Radio("2D segmentation", group_id=object_key+"_seg_dim", default=not segmentation_3D, visible = True, enable_events=True, key=key_2D)
-        radio_max_proj = sg.Radio("max proj", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key= object_key+"_max_proj")
-        radio_mean_proj = sg.Radio("mean proj", group_id=object_key+"_2D_proj", default=True, disabled= segmentation_3D, key = object_key + "_mean_proj")
-        radio_slice_proj = sg.Radio("select slice", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key=object_key + "_select_slice")
-        
+    radio_2D_seg = sg.Radio("2D segmentation", group_id=object_key+"_seg_dim", default=not segmentation_3D, visible = True, enable_events=True, key=key_2D)
+    radio_max_proj = sg.Radio("max proj", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key= object_key+"_max_proj")
+    radio_mean_proj = sg.Radio("mean proj", group_id=object_key+"_2D_proj", default=True, disabled= segmentation_3D, key = object_key + "_mean_proj")
+    radio_slice_proj = sg.Radio("select slice", group_id=object_key+"_2D_proj", default=False, disabled= segmentation_3D, key=object_key + "_select_slice")
+    radio_3D_seg = sg.Radio("3D segmentation", group_id=object_key+"_seg_dim", default=segmentation_3D, visible = True, enable_events=True, key= key_3D)
+    anisotropy = sg.Input(default_text = 1, key = object_key + "_anisotropy",size=5, disabled=not segmentation_3D)
+
+    if is_3D_stack :        
         slice_number = reordered_shape[0 + is_multichannel] if not reordered_shape is None else 999
         int_slice_proj = sg.Spin(list(range(slice_number)), size= (5,1), disabled= segmentation_3D, key=object_key+"_selected_slice")
 
@@ -329,8 +331,6 @@ def _segmentate_object_layout(
                 [sg.Column([[radio_max_proj, radio_mean_proj, radio_slice_proj, int_slice_proj]], pad= (15,0,0,5))]
                 ]
 
-        radio_3D_seg = sg.Radio("3D segmentation", group_id=object_key+"_seg_dim", default=segmentation_3D, visible = True, enable_events=True, key= key_3D)
-        anisotropy = sg.Input(default_text = 1, key = object_key + "_anisotropy",size=5, disabled=not segmentation_3D)
 
         layout += [
             [radio_3D_seg],

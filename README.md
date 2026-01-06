@@ -1,7 +1,7 @@
 # Small Fish - A User-Friendly Graphical Interface for smFISH Image Quantification
 
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
- [![GitHub stars](https://img.shields.io/github/stars/SmallFishGUI/small_fish_gui.svg?style=social)](https://github.com/SmallFishGUI/small_fish_gui) [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+ [![GitHub stars](https://img.shields.io/github/stars/SmallFishGUI/small_fish_gui.svg?style=social)](https://github.com/SmallFishGUI/small_fish_gui) [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
 **Small Fish** is a python application for smFish image analysis. It provides a ready to use graphical interface to synthetize state-of-the-art scientific packages into an automated workflow. Small Fish is designed to simplify images quantification and analysis for people without coding skills. 
 
@@ -52,7 +52,7 @@ If you don't have a python installation yet I would recommend the [miniconda dis
 
 It is higly recommanded to create a specific [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [virtual](https://docs.python.org/3.9/library/venv.html) environnement to install small fish.
 
-As of version 2.0.3 Small Fish runs on python 3.12.
+As of version 2.1.0 Small Fish runs on python 3.12.
 
 If you are using **conda** or **miniconda**
 ```bash
