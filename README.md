@@ -93,3 +93,9 @@ python -m small_fish_gui
 ```
 
 You are all set! Try it yourself or check the [get started](https://github.com/2Echoes/small_fish_gui/wiki/Get-started) section in the wiki.
+
+## Developement
+Bugs to fix :
+* occasional bugs when using cluster merge buttons : position of new cluster is off
+* When using software for the first time, default configuration of working directory is set in "other_image_nucleus" resulting in an error.
+* Use of load button during co-localization quantification yields wrongs results
