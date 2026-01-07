@@ -53,8 +53,8 @@ def correct_spots(
 
     scale = compute_anisotropy_coef(voxel_size)
     Viewer = napari.Viewer(ndisplay=2, title= 'Spot correction', axis_labels=['z','y','x'], show= False)
-    Viewer.add_image(image, scale=scale, name= "rna signal", blending= 'additive', colormap='red', contrast_limits=[image.min(), image.max()])
-    other_colors = ['green', 'blue', 'gray', 'cyan', 'bop orange', 'bop purple'] * ((len(other_images)-1 // 7) + 1)
+    Viewer.add_image(image, scale=scale, name= "rna signal", blending= 'additive', colormap='green', contrast_limits=[image.min(), image.max()])
+    other_colors = ['red', 'blue', 'gray', 'cyan', 'bop orange', 'bop purple'] * ((len(other_images)-1 // 7) + 1)
     for im, color in zip(other_images, other_colors) :  
         Viewer.add_image(im, scale=scale, blending='additive', visible=False, colormap=color, contrast_limits=[im.min(), im.max()])
 
