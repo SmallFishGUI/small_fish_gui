@@ -256,6 +256,7 @@ class ClusterMerger(ClusterWidget) :
 
             #Dropping selected clusters
             self.cluster_layer.data = np.delete(self.cluster_layer.data, selected_clusters, axis=0)
+            self.cluster_layer.features = self.cluster_layer.features.drop(selected_clusters, axis=0)
 
             #Updating spots
             belonging_spots = self.single_layer.features.loc[self.single_layer.features['cluster_id'].isin(selected_cluster_ids)].index
