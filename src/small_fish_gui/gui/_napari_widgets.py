@@ -815,7 +815,6 @@ class DenseRegionDeconvolver(NapariWidget) :
         self.kernel_size = kernel_size
         self.voxel_size = voxel_size
         self.dim = len(voxel_size)
-        print("DIM : ", self.dim)
         self.update_dense_regions()
         super().__init__()
 
