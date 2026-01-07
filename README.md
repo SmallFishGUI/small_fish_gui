@@ -96,6 +96,4 @@ You are all set! Try it yourself or check the [get started](https://github.com/2
 
 ## Developement
 Bugs to fix :
-* occasional bugs when using cluster merge buttons : position of new cluster is off
-* Check that clustering works properly in interactive mode (it looks the wizard supressing empty clusters deletes also non empty clusters)
 * Use of load button during co-localization quantification yields wrongs results  
