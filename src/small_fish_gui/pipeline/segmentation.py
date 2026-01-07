@@ -68,7 +68,7 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
     #Ask user for parameters
     #if incorrect parameters --> set relaunch to True
         while True :
-            segmentation_parameters.setdefault("other_nucleus_image", segmentation_parameters["working_directory"])
+            segmentation_parameters.setdefault("other_nucleus_image", "")
             segmentation_parameters.setdefault("cytoplasm_channel", segmentation_parameters["detection_channel"])
             segmentation_parameters.setdefault("cytoplasm_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
             segmentation_parameters.setdefault("nucleus_segmentation_3D", segmentation_parameters["do_3D_segmentation"])

@@ -104,7 +104,7 @@ def batch_promp(
     preset["reordered_shape"] =  None
     preset.setdefault("filename", "")
     #Segmentation tab
-    preset.setdefault("other_nucleus_image", default.working_directory)
+    preset.setdefault("other_nucleus_image", "")
     preset.setdefault("cytoplasm_channel", default.detection_channel)
     preset.setdefault("cytoplasm_segmentation_3D", default.do_3D_segmentation)
     preset.setdefault("nucleus_segmentation_3D", default.do_3D_segmentation)

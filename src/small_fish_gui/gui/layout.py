@@ -428,11 +428,12 @@ def _detection_layout(
     
     if (do_segmentation and is_multichannel) or (is_multichannel and segmentation_done):
         layout += [[sg.Text("nucleus channel signal "), sg.InputText(default_text=default_dict.setdefault('nucleus_channel',default.nucleus_channel), key= "nucleus channel signal", size= 5, tooltip= "Channel from which signal will be measured for nucleus features, \nallowing you to measure signal from a different channel than the one used for segmentation.")]]
+    layout += bool_layout(['Interactive threshold selector'],keys = ['show_interactive_threshold_selector'], preset=[default.interactive_threshold_selector])
     
     #Deconvolution
     if do_dense_region_deconvolution :
         default_dense_regions_deconvolution = [default_dict.setdefault('alpha',default.alpha), default_dict.setdefault('beta',default.beta)]
-        layout += parameters_layout(['alpha', 'beta',], default_values= default_dense_regions_deconvolution, header= 'do_dense_regions_deconvolution')
+        layout += parameters_layout(['alpha', 'beta',], default_values= default_dense_regions_deconvolution, header= 'Dense regions deconvolution')
         layout += parameters_layout(['gamma'], unit= 'px', default_values= [default_dict.setdefault('gamma',default.gamma)])
         layout += tuple_layout(opt= {"deconvolution_kernel" : True}, unit= {"deconvolution_kernel" : 'px'}, default_dict=default_dict, deconvolution_kernel = tuple_shape)
     
@@ -441,7 +442,6 @@ def _detection_layout(
         layout += parameters_layout(['Cluster radius'],keys=['cluster_size'], unit="radius(nm)", default_values=[default_dict.setdefault('cluster_size',default.cluster_size)])
         layout += parameters_layout(['Min nb spots per cluster'],keys=['min_number_of_spots'], default_values=[default_dict.setdefault('min_number_of_spots', default.min_spot)])
 
-    layout += bool_layout(['Interactive threshold selector'],keys = ['show_interactive_threshold_selector'], preset=[default.interactive_threshold_selector])
     layout += path_layout(
         keys=['spots_extraction_folder'],
         look_for_dir=True,
