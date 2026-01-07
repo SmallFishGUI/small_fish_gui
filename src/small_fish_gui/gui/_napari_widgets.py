@@ -814,6 +814,8 @@ class DenseRegionDeconvolver(NapariWidget) :
         self.spot_radius = spot_radius
         self.kernel_size = kernel_size
         self.voxel_size = voxel_size
+        self.dim = len(voxel_size)
+        print("DIM : ", self.dim)
         self.update_dense_regions()
         super().__init__()
 
@@ -831,13 +833,23 @@ class DenseRegionDeconvolver(NapariWidget) :
         for label, region in enumerate(dense_regions) :
             reg_im = region.image
             coordinates = np.argwhere(reg_im)
-            z,y,x = coordinates.T
-            min_z,min_y,min_x,*_ = region.bbox
-            z += min_z
-            y += min_y
-            x += min_x
 
-            mask[z,y,x] = label + 1
+            if self.dim == 2 :
+                y,x = coordinates.T
+                min_y,min_x,*_ = region.bbox
+                y += min_y
+                x += min_x
+
+                mask[y,x] = label + 1
+
+            else :
+                z,y,x = coordinates.T
+                min_z,min_y,min_x,*_ = region.bbox
+                z += min_z
+                y += min_y
+                x += min_x
+
+                mask[z,y,x] = label + 1
 
         self.dense_regions = mask
 
