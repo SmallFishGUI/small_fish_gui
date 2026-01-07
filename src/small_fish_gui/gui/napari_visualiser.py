@@ -39,17 +39,19 @@ def correct_spots(
     dim = len(voxel_size)
 
     if dim == 3 and type(cell_label) != type(None) :
-        cell_label = np.repeat(
-            cell_label[np.newaxis],
-            repeats= len(image),
-            axis=0
-        )
+        if cell_label.ndim == 2 :
+            cell_label = np.repeat(
+                cell_label[np.newaxis],
+                repeats= len(image),
+                axis=0
+            )
     if dim == 3 and type(nucleus_label) != type(None) :
-        nucleus_label = np.repeat(
-            nucleus_label[np.newaxis],
-            repeats= len(image),
-            axis=0
-        )
+        if nucleus_label == 2 :
+            nucleus_label = np.repeat(
+                nucleus_label[np.newaxis],
+                repeats= len(image),
+                axis=0
+            )
 
     scale = compute_anisotropy_coef(voxel_size)
     Viewer = napari.Viewer(ndisplay=2, title= 'Spot correction', axis_labels=['z','y','x'], show= False)
@@ -96,8 +98,10 @@ def correct_spots(
             feature_defaults= {"spot_number" : min_spot_number, "cluster_id" : -2, "end" : True} # napari features default will not work with np.nan passing -2 instead.
         )
 
-    if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
-    if type(nucleus_label) != type(None) : Viewer.add_labels(nucleus_label, scale=scale, opacity= 0.2, blending= 'additive')
+    if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : 
+        cell_label_layer = Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
+    if type(nucleus_label) != type(None) : 
+        nucleus_label_layer = Viewer.add_labels(nucleus_label, scale=scale, opacity= 0.2, blending= 'additive')
     
     #Adding widget
     if type(clusters) != type(None) :
@@ -153,7 +157,26 @@ def correct_spots(
         new_cluster_radius = None
         new_min_spot_number = None
 
-    return new_spots, new_clusters,  new_cluster_radius, new_min_spot_number
+    #Preparing updated segmentation masks
+    if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : 
+        new_cell_label = cell_label_layer.data
+    else :
+        new_cell_label = cell_label
+    if type(nucleus_label) != type(None) :
+        new_nucleus_label = nucleus_label_layer.data
+    else :
+        new_nucleus_label = nucleus_label
+
+    if dim == 3 and type(cell_label) != type(None) :
+        if cell_label.ndim == 2 :
+            new_cell_label = new_cell_label.max(axis=0)
+    if dim == 3 and type(nucleus_label) != type(None) :
+        if nucleus_label == 2 :
+            new_nucleus_label = new_nucleus_label.max(axis=0)
+            
+
+
+    return new_spots, new_clusters,  new_cluster_radius, new_min_spot_number, new_nucleus_label, new_cell_label
 
 
 # Segmentation

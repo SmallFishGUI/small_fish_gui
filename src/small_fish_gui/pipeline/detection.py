@@ -660,7 +660,7 @@ def launch_detection(
 
     if user_parameters['show_napari_corrector'] :
 
-        spots, clusters, new_cluster_radius, new_min_spot_number = correct_spots(
+        spots, clusters, new_cluster_radius, new_min_spot_number, nucleus_label, cell_label = correct_spots(
             image, 
             spots, 
             user_parameters['voxel_size'],
