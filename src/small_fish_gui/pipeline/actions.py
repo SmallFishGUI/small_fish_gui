@@ -30,6 +30,7 @@ from ..hints import pipeline_parameters
 from ..__init__ import __wiki__
 
 import os
+import traceback
 import pandas as pd
 import FreeSimpleGUI as sg
 import numpy as np
@@ -302,61 +303,74 @@ def compute_colocalisation(
         return global_coloc_df, cell_coloc_df, max_id
 
     if os.path.isfile(spots1_key) :
-        Spots1 = load_spots(spots1_key)
-        fake_acquisition = reconstruct_acquisition_data(
-            Spots=Spots1,
-            max_id=max_id,
-            filename= os.path.basename(spots1_key),
-            voxel_size = voxel_size
-        )
-        result_dataframe = pd.concat([
-            result_dataframe,
-            fake_acquisition
-        ], axis=0)
-
-        if not Spots1['cell_label'].isna().all() :
-            fake_cells = reconstruct_cell_data(
+        try :
+            Spots1 = load_spots(spots1_key)
+            fake_acquisition = reconstruct_acquisition_data(
                 Spots=Spots1,
                 max_id=max_id,
+                filename= os.path.basename(spots1_key),
+                voxel_size = voxel_size
             )
-
-            cell_result_dataframe = pd.concat([
-                cell_result_dataframe,
-                fake_cells
+            result_dataframe = pd.concat([
+                result_dataframe,
+                fake_acquisition
             ], axis=0)
 
-        max_id +=1
-        acquisition_id1 = fake_acquisition.iloc[0].at['acquisition_id']
+            if not Spots1['cell_label'].isna().all() :
+                fake_cells = reconstruct_cell_data(
+                    Spots=Spots1,
+                    max_id=max_id,
+                    filename= os.path.basename(spots1_key)
+                )
+
+                cell_result_dataframe = pd.concat([
+                    cell_result_dataframe,
+                    fake_cells
+                ], axis=0)
+
+            max_id +=1
+            acquisition_id1 = fake_acquisition.iloc[0].at['acquisition_id']
+        except ValueError as e :
+            sg.popup("Could not reconstruct coordinates from selected file (Spots 1)")
+            traceback.print_exception(e)
+            return global_coloc_df, cell_coloc_df, max_id
+        
 
     else :
         acquisition_id1 = spots1_key
     
     if os.path.isfile(spots2_key) :
-        Spots2 = load_spots(spots2_key)
-        fake_acquisition = reconstruct_acquisition_data(
-            Spots=Spots2,
-            max_id=max_id,
-            filename= os.path.basename(spots2_key),
-            voxel_size = voxel_size
-        )
-        result_dataframe = pd.concat([
-            result_dataframe,
-            fake_acquisition
-        ], axis=0)
-
-        if not Spots2['cell_label'].isna().all() :
-            fake_cells = reconstruct_cell_data(
+        try :
+            Spots2 = load_spots(spots2_key)
+            fake_acquisition = reconstruct_acquisition_data(
                 Spots=Spots2,
                 max_id=max_id,
+                voxel_size = voxel_size,
+                filename= os.path.basename(spots2_key),
             )
-
-            cell_result_dataframe = pd.concat([
-                cell_result_dataframe,
-                fake_cells
+            result_dataframe = pd.concat([
+                result_dataframe,
+                fake_acquisition
             ], axis=0)
 
-        max_id +=1
-        acquisition_id2 = fake_acquisition.iloc[0].at['acquisition_id']
+            if not Spots2['cell_label'].isna().all() :
+                fake_cells = reconstruct_cell_data(
+                    Spots=Spots2,
+                    max_id=max_id,
+                    filename= os.path.basename(spots2_key)
+                )
+
+                cell_result_dataframe = pd.concat([
+                    cell_result_dataframe,
+                    fake_cells
+                ], axis=0)
+
+            max_id +=1
+            acquisition_id2 = fake_acquisition.iloc[0].at['acquisition_id']
+        except ValueError as e :
+            sg.popup("Could not reconstruct coordinates from selected file (Spots 2)")
+            traceback.print_exception(e)
+            return global_coloc_df, cell_coloc_df, max_id
 
     else :
         acquisition_id2 = spots2_key

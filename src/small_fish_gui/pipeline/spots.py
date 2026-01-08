@@ -50,8 +50,7 @@ def compute_Spots(
     if type(cluster_id) == type(None) : #When user doesn't select cluster
         cluster_id = [np.nan]*len(spots)
 
-    index = list(zip(*spots))
-    index = tuple(index)
+    index = tuple(spots.T.tolist())
     spot_intensities_list = list(image[index])
     if type(nucleus_label) != type(None) :
         if nucleus_label.ndim == 2 :
@@ -127,7 +126,7 @@ def reconstruct_acquisition_data(
         * shape : tuple[int]
         * filename : str
     """
-    
+    max_id = int(max_id)
     spots = reconstruct_spots(Spots['coordinates'])
     has_clusters = not Spots['cluster_id'].isna().all()
     spot_number = len(spots)
@@ -139,7 +138,7 @@ def reconstruct_acquisition_data(
 
         new_acquisition = pd.DataFrame({
             'acquisition_id' : [max_id + 1],
-            'name' : ["loaded_spots_{}".format(max_id + 1)],
+            'name' : ["(loaded_spots)_{}".format(filename.split('.', maxsplit=1)[0])],
             'threshold' : [0],
             'spots' : [spots],
             'clusters' : [clusters],
@@ -151,7 +150,7 @@ def reconstruct_acquisition_data(
     else :
         new_acquisition = pd.DataFrame({
             'acquisition_id' : [max_id + 1],
-            'name' : ["loaded_spots_{}".format(max_id + 1)],
+            'name' : ["(loaded_spots)_{}".format(filename.split('.', maxsplit=1)[0])],
             'threshold' : [0],
             'spots' : [spots],
             'spot_number' : [spot_number],
@@ -175,6 +174,7 @@ def reconstruct_spots(
 def reconstruct_cell_data(
         Spots : pd.DataFrame,
         max_id : int,
+        filename : str,
         ) :
     
     has_cluster = not Spots['cluster_id'].isna().all()
@@ -199,7 +199,7 @@ def reconstruct_cell_data(
         cell['clustered_spot_number'] = cell['clustered_spots_coords'].apply(len)
 
     cell['acquisition_id'] = max_id + 1
-    cell['name'] = "loaded_spots_{}".format(max_id + 1)
+    cell['name'] = "(loaded_spots)_{}".format(filename.split('.', maxsplit=1)[0])
     cell = cell.rename(columns={"cell_label": "cell_id"})
 
     return cell

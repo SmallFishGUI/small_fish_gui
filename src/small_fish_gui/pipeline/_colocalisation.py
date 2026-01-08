@@ -137,7 +137,11 @@ def spots_colocalisation(
         voxel_size : (z,y,x) tuple
     """
 
+    #No cluster or no spots case
+    if spot_list1 is np.nan or spot_list2 is np.nan : return np.nan
     if len(spot_list1) == 0 or len(spot_list2) == 0 : return np.nan
+    
+    #Dim check
     if len(spot_list1[0]) != len(spot_list2[0]) : 
         raise MissMatchError("dimensionalities of spots 1 and spots 2 don't match.")
 
@@ -170,7 +174,10 @@ def initiate_colocalisation(
         ) :
 
     result_tables = result_tables.set_index('acquisition_id', drop=False)
-    available_spots = dict(zip(result_tables['acquisition_id'].astype(str).str.cat(result_tables['name'],sep='-'), result_tables.index))
+    if len(result_tables) != 0 :
+        available_spots = dict(zip(result_tables['acquisition_id'].astype(str).str.cat(result_tables['name'],sep='-'), result_tables.index))
+    else :
+        available_spots = {}
     default_values = dict(get_settings())
 
     while True :
@@ -228,7 +235,7 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
     assert len(acquisition1) == 1
     assert len(acquisition2) == 1
 
-    acquisition_couple = (acquisition_id1,acquisition_id2)
+    acquisition_couple = (int(acquisition_id1),int(acquisition_id2))
 
     voxel_size1 = acquisition1.iloc[0].at['voxel_size']
     voxel_size2 = acquisition2.iloc[0].at['voxel_size']
