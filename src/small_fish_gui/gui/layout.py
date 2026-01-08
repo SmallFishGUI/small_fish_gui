@@ -119,6 +119,8 @@ def path_layout(keys= [],look_for_dir = False, header=None, preset=settings.work
     check_parameter(keys= list, header = (str, type(None)))
     for key in keys : check_parameter(key = str)
     
+    initial_folder = preset if preset != "" else settings.working_directory
+
     if look_for_dir : Browse = sg.FolderBrowse
     else : Browse = sg.FileBrowse
 
@@ -446,7 +448,7 @@ def _detection_layout(
         keys=['spots_extraction_folder'],
         look_for_dir=True,
         header= "Individual spot extraction",
-        preset= default_dict.setdefault('spots_extraction_folder', default.spot_extraction_folder)
+        preset= default_dict.setdefault('spots_extraction_folder', "")
     )
     default_filename = default_dict.setdefault("filename","") + "_spot_extraction"
     layout += parameters_layout(

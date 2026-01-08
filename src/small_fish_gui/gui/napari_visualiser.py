@@ -46,7 +46,7 @@ def correct_spots(
                 axis=0
             )
     if dim == 3 and type(nucleus_label) != type(None) :
-        if nucleus_label == 2 :
+        if nucleus_label.ndim == 2 :
             nucleus_label = np.repeat(
                 nucleus_label[np.newaxis],
                 repeats= len(image),
@@ -171,7 +171,7 @@ def correct_spots(
         if cell_label.ndim == 2 :
             new_cell_label = new_cell_label.max(axis=0)
     if dim == 3 and type(nucleus_label) != type(None) :
-        if nucleus_label == 2 :
+        if nucleus_label.ndim == 2 :
             new_nucleus_label = new_nucleus_label.max(axis=0)
             
 
