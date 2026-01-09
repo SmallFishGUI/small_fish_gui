@@ -115,16 +115,6 @@ def reconstruct_acquisition_data(
         ) -> pd.DataFrame:
     """
     Aim : creating a acquisition to add to result_dataframe from loaded spots for co-localization use  
-
-    **Needed keys for colocalization**
-        * acquisition_id
-        * name
-        * spots : np.ndarray[int] (nb_spots, nb_coordinates)
-        * clusters : np.ndarray[int] (nb_cluster, nb_coordinate + 2)
-        * spots_cluster_id : list[int]
-        * voxel_size : tuple[int]
-        * shape : tuple[int]
-        * filename : str
     """
     max_id = int(max_id)
     spots = reconstruct_spots(Spots['coordinates'])
@@ -133,15 +123,18 @@ def reconstruct_acquisition_data(
 
     if has_clusters :
 
-        clusters = np.empty(shape=(0,5), dtype=int) #useless for coloc only needded in columns to enable coloc on clusters
-        spot_cluster_id = Spots['cluster_id'].to_numpy().astype(int).tolist()
+        clusters = np.empty(shape=(0,5), dtype=int)
+        spot_cluster_id = Spots['cluster_id'].to_numpy().astype(int)
+        clustered_spots = spots[spot_cluster_id != -1]
+        print("clustered_spots : ", clustered_spots)
 
         new_acquisition = pd.DataFrame({
             'acquisition_id' : [max_id + 1],
             'name' : ["(loaded_spots)_{}".format(filename.split('.', maxsplit=1)[0])],
             'threshold' : [0],
             'spots' : [spots],
-            'clusters' : [clusters],
+            'clusters' : [clusters.tolist()],
+            'clustered_spots_coords' : [clustered_spots.tolist()],
             'spots_cluster_id' : [spot_cluster_id],
             'spot_number' : [spot_number],
             'filename' : [filename],
@@ -157,6 +150,11 @@ def reconstruct_acquisition_data(
             'filename' : [filename],
             'voxel_size' : [voxel_size],
         })
+
+    print("Reconstructed acquisition : \n", new_acquisition)
+    print("\n", new_acquisition.columns)
+    if 'clusters' in new_acquisition.columns :
+        print("\n", new_acquisition['clusters'])
 
     return new_acquisition
 
