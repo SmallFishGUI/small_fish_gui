@@ -213,23 +213,26 @@ def initiate_detection(user_parameters : pipeline_parameters, map_, shape) :
     #Attempt to read voxel size from metadata
     voxel_size = get_voxel_size(user_parameters['image_path'])
     if voxel_size is None  :
-        if not user_parameters.get('voxel_size') is None:
-            pass
-        else :
+        if user_parameters.get('voxel_size') is None:
             detection_parameters['voxel_size_z'] = None
             detection_parameters['voxel_size_y'] = None
             detection_parameters['voxel_size_x'] = None
+        else :
+            if is_3D_stack : detection_parameters['voxel_size_z'] = user_parameters.get['voxel_size'][0]
+            detection_parameters['voxel_size_y'] = user_parameters.get['voxel_size'][0 + is_3D_stack]
+            detection_parameters['voxel_size_x'] = user_parameters.get['voxel_size'][1 + is_3D_stack]
+
     else :
         detection_parameters['voxel_size'] = [round(v) if isinstance(v, (float,int)) else None for v in voxel_size]
-        detection_parameters['voxel_size_z'] = detection_parameters['voxel_size'][0] if isinstance(detection_parameters['voxel_size'][0], (float,int)) else None
-        detection_parameters['voxel_size_y'] = detection_parameters['voxel_size'][1] if isinstance(detection_parameters['voxel_size'][1], (float,int)) else None
-        detection_parameters['voxel_size_x'] = detection_parameters['voxel_size'][2] if isinstance(detection_parameters['voxel_size'][2], (float,int)) else None
+        detection_parameters['voxel_size_z'] = detection_parameters['voxel_size'][0] if isinstance(detection_parameters.get('voxel_size')[0], (float,int)) else None
+        detection_parameters['voxel_size_y'] = detection_parameters['voxel_size'][0 + is_3D_stack] if isinstance(detection_parameters.get('voxel_size')[0 + is_3D_stack], (float,int)) else None
+        detection_parameters['voxel_size_x'] = detection_parameters['voxel_size'][1 + is_3D_stack] if isinstance(detection_parameters.get('voxel_size')[1 + is_3D_stack], (float,int)) else None
 
     #Setting default spot size to 1.5 voxel
     if detection_parameters.get('spot_size') is None and not detection_parameters.get('voxel_size') is None:
         detection_parameters['spot_size_z'] = round(detection_parameters['voxel_size_z']*1.5) if isinstance(detection_parameters.get('voxel_size_z'), (float,int)) else None
-        detection_parameters['spot_size_y'] = round(detection_parameters['voxel_size_y']*1.5) if isinstance(detection_parameters['voxel_size_y'],(float,int)) else None
-        detection_parameters['spot_size_x'] = round(detection_parameters['voxel_size_x']*1.5) if isinstance(detection_parameters['voxel_size_x'],(float,int)) else None
+        detection_parameters['spot_size_y'] = round(detection_parameters['voxel_size_y']*1.5) if isinstance(detection_parameters.get('voxel_size_y'),(float,int)) else None
+        detection_parameters['spot_size_x'] = round(detection_parameters['voxel_size_x']*1.5) if isinstance(detection_parameters.get('voxel_size_x'),(float,int)) else None
 
     while True :
         detection_parameters = detection_parameters_promt(
