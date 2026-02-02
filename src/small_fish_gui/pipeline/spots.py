@@ -60,6 +60,19 @@ def compute_Spots(
     else :
         in_nuc_list = np.nan
     if type(cell_label) != type(None) :
+
+        # Collect all labels that are on fov edge
+        on_edge_labels = np.unique(
+            np.concatenate([
+                cell_label[:,0],
+                cell_label[:,-1],
+                cell_label[0,:],
+                cell_label[-1,:],
+            ])
+        ).astype(int)
+        print("on edge label : ", on_edge_labels)
+
+
         if cell_label.ndim == 3 :
             cell_label_list = list(cell_label[index])
         else :    
@@ -79,6 +92,10 @@ def compute_Spots(
         'coordinates' : coord_list,
         'cluster_id' : cluster_id,
     })
+    
+    if type(cell_label) != type(None) : #Filter on edge cells
+        target_index = Spots.loc[Spots["cell_label"].isin(on_edge_labels)].index
+        Spots.loc[target_index,["cell_label"]] = 0
 
     return Spots
     
@@ -176,6 +193,7 @@ def reconstruct_cell_data(
         ) :
     
     has_cluster = not Spots['cluster_id'].isna().all()
+    if 'cell_label' in Spots.columns : Spots = Spots.loc[Spots["cell_label"] !=0]
     coordinates = reconstruct_spots(Spots['coordinates'])
     Spots['coordinates'] = pd.Series(coordinates.tolist(), dtype=object, index= Spots.index)
 

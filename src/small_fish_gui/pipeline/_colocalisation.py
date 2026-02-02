@@ -449,11 +449,49 @@ def _cell_coloc(
     return colocalisation_df
 
 @add_default_loading
-def launch_colocalisation(acquisition_id1, acquisition_id2, result_dataframe, cell_result_dataframe, colocalisation_distance, global_coloc_df, cell_coloc_df: dict) :
+def launch_colocalisation(
+    acquisition_id1 : int, 
+    acquisition_id2 : int, 
+    result_dataframe : pd.DataFrame, 
+    cell_result_dataframe : pd.DataFrame, 
+    colocalisation_distance : pd.DataFrame, 
+    global_coloc_df : pd.DataFrame, 
+    cell_coloc_df: dict) :
     
 
     if acquisition_id1 in list(cell_result_dataframe['acquisition_id']) and acquisition_id2 in list(cell_result_dataframe['acquisition_id']) :
         print("Launching cell to cell colocalisation.")
+        
+        #TODO
+        #If loaded spots : Need to remove cell_label == 0 from quantification
+        #                  Need to remove cells on the edges of fov (usually deleted by bigfish)
+        #FOR BOTH ?        Clusters features not computed
+        
+        DEBUGING = True
+        if DEBUGING :
+            import traceback
+            try :
+                TEST_FOLDER_PATH = "/media/SSD_floricslimani/test_coloc/debug_output/"
+                print("TYPE CHECKS :\n")
+                print("acquisition_id1 : ", type(acquisition_id1))
+                print("acquisition_id2 : ", type(acquisition_id2))
+                print("result_dataframe : ", type(result_dataframe))
+                print("cell_result_dataframe : ", type(cell_result_dataframe))
+                print("colocalisation_distance : ", type(colocalisation_distance))
+                print("global_coloc_df : ", type(global_coloc_df))
+                print("cell_coloc_df : ", type(cell_coloc_df))
+
+
+                result_dataframe.to_excel(TEST_FOLDER_PATH + "result_dataframe.xlsx")
+                cell_result_dataframe.to_excel(TEST_FOLDER_PATH + "cell_result_dataframe.xlsx")
+
+
+            except Exception as e :
+                error = traceback.format_exc()
+                with open(TEST_FOLDER_PATH + "debug_log.txt", mode="w+") as log:
+                    log.write(error)
+                raise e
+        
         new_coloc = _cell_coloc(
             acquisition_id1 = acquisition_id1,
             acquisition_id2 = acquisition_id2,
