@@ -309,7 +309,10 @@ def interactive_detection(
     if dense_region_deconvolution : updated_parameters.update(dense_region_deconvolver.get_detection_parameters())
     signal = Viewer.layers['raw signal'].data
 
-    spots = Viewer.layers['single spots'].data.astype(np.int32)
+    if 'decovoluted spots' in Viewer.layers :
+        spots = Viewer.layers['decovoluted spots'].data.astype(np.int32)
+    else :
+        spots = Viewer.layers['single spots'].data.astype(np.int32)
 
     return spots, signal, updated_parameters
 
