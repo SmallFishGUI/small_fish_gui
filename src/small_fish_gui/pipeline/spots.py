@@ -70,8 +70,6 @@ def compute_Spots(
                 cell_label[-1,:],
             ])
         ).astype(int)
-        print("on edge label : ", on_edge_labels)
-
 
         if cell_label.ndim == 3 :
             cell_label_list = list(cell_label[index])
@@ -143,7 +141,6 @@ def reconstruct_acquisition_data(
         clusters = np.empty(shape=(0,5), dtype=int)
         spot_cluster_id = Spots['cluster_id'].to_numpy().astype(int)
         clustered_spots = spots[spot_cluster_id != -1]
-        print("clustered_spots : ", clustered_spots)
 
         new_acquisition = pd.DataFrame({
             'acquisition_id' : [max_id + 1],
@@ -168,10 +165,6 @@ def reconstruct_acquisition_data(
             'voxel_size' : [voxel_size],
         })
 
-    print("Reconstructed acquisition : \n", new_acquisition)
-    print("\n", new_acquisition.columns)
-    if 'clusters' in new_acquisition.columns :
-        print("\n", new_acquisition['clusters'])
 
     return new_acquisition
 
@@ -195,22 +188,23 @@ def reconstruct_cell_data(
     has_cluster = not Spots['cluster_id'].isna().all()
     if 'cell_label' in Spots.columns : Spots = Spots.loc[Spots["cell_label"] !=0]
     coordinates = reconstruct_spots(Spots['coordinates'])
-    Spots['coordinates'] = pd.Series(coordinates.tolist(), dtype=object, index= Spots.index)
+    Spots.loc[:,['coordinates']] = pd.Series(coordinates.tolist(), dtype=object, index= Spots.index)
 
     cell = Spots.groupby('cell_label')['coordinates'].apply(np.array).rename("rna_coords").reset_index(drop=False)
     
     #Handle cells with no spots
     na_mask =cell[cell['rna_coords'].isna()].index
     cell.loc[na_mask, ['rna_coords']] = pd.Series([np.empty(shape=(0,3))]*len(na_mask), dtype= object, index=na_mask)
+    cell.loc[~na_mask, "rna_coords"] = cell.loc[~na_mask, "rna_coords"].apply(list).apply(np.array)
     
     cell['total_rna_number'] = cell['rna_coords'].apply(len)
-    
     if has_cluster :
         cell['clustered_spots_coords'] = Spots[Spots['cluster_id'] !=-1].groupby('cell_label')['coordinates'].apply(np.array).rename("clustered_spots_coords")
         
         #Handle cells with no clusters
         na_mask =cell[cell['clustered_spots_coords'].isna()].index
         cell.loc[na_mask, ['clustered_spots_coords']] = pd.Series([np.empty(shape=(0,3))]*len(na_mask), dtype= object, index=na_mask)
+        cell["clustered_spots_coords"] = cell["clustered_spots_coords"].apply(list).apply(np.array)
         
         cell['clustered_spot_number'] = cell['clustered_spots_coords'].apply(len)
 

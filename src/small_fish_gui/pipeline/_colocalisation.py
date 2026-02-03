@@ -228,7 +228,7 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
     - fraction_spot2_coloc_spots
 
     """
-
+    CLUSTER_KEY = "clustered_spots_coords"
     acquisition1 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id1]
     acquisition2 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id2]
 
@@ -259,7 +259,7 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
         fraction_spots1_coloc_spots2 = np.nan
         fraction_spots2_coloc_spots1 = np.nan
 
-    if 'clusters' in acquisition1.columns :
+    if CLUSTER_KEY in acquisition1.columns :
         try : 
             clusters_id_1 = np.array(acquisition1.iloc[0].at['spots_cluster_id'], dtype=int)
             fraction_spots2_coloc_cluster1 = spots_colocalisation(spot_list1=spots2, spot_list2=spots1[clusters_id_1 != -1], distance= colocalisation_distance, voxel_size=voxel_size) / spot2_total
@@ -272,7 +272,7 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
 
     else : fraction_spots2_coloc_cluster1 = np.nan
 
-    if 'clusters' in acquisition2.columns :
+    if CLUSTER_KEY in acquisition2.columns :
         try :
             clusters_id_2 = np.array(acquisition2.iloc[0].at['spots_cluster_id'], dtype=int)
             fraction_spots1_coloc_cluster2 = spots_colocalisation(spot_list1=spots1, spot_list2=spots2[clusters_id_2 != -1], distance= colocalisation_distance, voxel_size=voxel_size) / spot1_total
@@ -285,7 +285,7 @@ def _global_coloc(acquisition_id1,acquisition_id2, result_dataframe, colocalisat
 
     else : fraction_spots1_coloc_cluster2 = np.nan
 
-    if 'clusters' in acquisition2.columns and 'clusters' in acquisition1.columns :
+    if CLUSTER_KEY in acquisition2.columns and CLUSTER_KEY in acquisition1.columns :
         try :
             total_clustered_spots1 = len(spots1[clusters_id_1 != -1])
             total_clustered_spots2 = len(spots2[clusters_id_2 != -1])
@@ -340,6 +340,8 @@ def _cell_coloc(
     
     acquisition1 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id1]
     acquisition2 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id2]
+    has_clusters_1 = "clustered_spots_coords" in acquisition1.columns or "clusters" in acquisition1.columns
+    has_clusters_2 = "clustered_spots_coords" in acquisition2.columns or "clusters" in acquisition2.columns
 
     acquisition_name_id1 = acquisition1['name'].iat[0]
     acquisition_name_id2 = acquisition2['name'].iat[0]
@@ -357,14 +359,22 @@ def _cell_coloc(
 
     #Putting spots lists in 2 cols for corresponding cells
     pivot_values_columns = ['rna_coords', 'total_rna_number']
-    if 'clusters' in acquisition2.columns or 'clusters' in acquisition1.columns:
+    if has_clusters_1 or has_clusters_2 :
         pivot_values_columns.extend(['clustered_spots_coords','clustered_spot_number'])
     cell_dataframe.loc[:,['cell_id']] = cell_dataframe['cell_id'].astype(int)
+
+    if has_clusters_1 or has_clusters_2 :
+        target_column = "clustered_spots_coords"
+        target_mask = cell_dataframe.loc[:, target_column].apply(len) == 0
+        cell_dataframe.loc[target_mask,target_column] = pd.Series([np.empty(shape=(0,3), dtype=int)]* sum(target_mask), dtype=object)
+    
     colocalisation_df = cell_dataframe.pivot(
         columns=['name', 'acquisition_id'],
         values= pivot_values_columns,
         index= 'cell_id'
     )
+    colocalisation_df = colocalisation_df.dropna(axis=0)
+
     #spots _vs spots
     colocalisation_df[("spots_with_spots_count",coloc_name_forward,"forward")] = colocalisation_df['rna_coords'].apply(
         lambda x: spots_colocalisation(
@@ -386,8 +396,9 @@ def _cell_coloc(
         )
     colocalisation_df[("spots_with_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id2,acquisition_id2)].astype(float)
 
-    if 'clusters' in acquisition2.columns:
-        if len(acquisition2['clusters'].iat[0]) > 0 :
+    if has_clusters_2:
+        CLUSTER_KEY2 = "clustered_spots_coords" if "clustered_spots_coords" in acquisition2.columns else "clusters"
+        if len(acquisition2[CLUSTER_KEY2].iat[0]) > 0 :
 
             #spots to clusters
             colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.apply(
@@ -400,8 +411,9 @@ def _cell_coloc(
                 )
             colocalisation_df[("spots_with_clustered_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id1,acquisition_id1)].astype(float)
         
-    if 'clusters' in acquisition1.columns:
-        if len(acquisition1['clusters'].iat[0]) > 0 :
+    if has_clusters_1:
+        CLUSTER_KEY1 = "clustered_spots_coords" if "clustered_spots_coords" in acquisition1.columns else "clusters"
+        if len(acquisition1[CLUSTER_KEY1].iat[0]) > 0 :
             colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('rna_coords',acquisition_name_id2,acquisition_id2)],
@@ -413,8 +425,9 @@ def _cell_coloc(
 
             colocalisation_df[("spots_with_clustered_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id2,acquisition_id2)].astype(float)
 
-    if 'clusters' in acquisition2.columns and 'clusters' in acquisition1.columns:
-        if len(acquisition1['clusters'].iat[0]) > 0 and len(acquisition2['clusters'].iat[0]) > 0 :
+    if has_clusters_1 and has_clusters_2:
+
+        if len(acquisition1[CLUSTER_KEY1].iat[0]) > 0 and len(acquisition2[CLUSTER_KEY2].iat[0]) > 0 :
             #clusters to clusters 
             colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.apply(
                 lambda x: spots_colocalisation(
@@ -438,7 +451,7 @@ def _cell_coloc(
 
     colocalisation_df = colocalisation_df.sort_index(axis=0).sort_index(axis=1, level=0)
 
-    if 'clustered_spots_coords' in cell_dataframe.columns : colocalisation_df = colocalisation_df.drop('clustered_spots_coords', axis=1)
+    if 'clustered_spots_coords' in colocalisation_df.columns : colocalisation_df = colocalisation_df.drop('clustered_spots_coords', axis=1)
     colocalisation_df = colocalisation_df.drop('rna_coords', axis=1)
     colocalisation_df['voxel_size'] = [voxel_size]*len(colocalisation_df)
     colocalisation_df['pair_name'] = [(acquisition_name_id1, acquisition_name_id2)] * len(colocalisation_df)
@@ -461,36 +474,6 @@ def launch_colocalisation(
 
     if acquisition_id1 in list(cell_result_dataframe['acquisition_id']) and acquisition_id2 in list(cell_result_dataframe['acquisition_id']) :
         print("Launching cell to cell colocalisation.")
-        
-        #TODO
-        #If loaded spots : Need to remove cell_label == 0 from quantification
-        #                  Need to remove cells on the edges of fov (usually deleted by bigfish)
-        #FOR BOTH ?        Clusters features not computed
-        
-        DEBUGING = True
-        if DEBUGING :
-            import traceback
-            try :
-                TEST_FOLDER_PATH = "/media/SSD_floricslimani/test_coloc/debug_output/"
-                print("TYPE CHECKS :\n")
-                print("acquisition_id1 : ", type(acquisition_id1))
-                print("acquisition_id2 : ", type(acquisition_id2))
-                print("result_dataframe : ", type(result_dataframe))
-                print("cell_result_dataframe : ", type(cell_result_dataframe))
-                print("colocalisation_distance : ", type(colocalisation_distance))
-                print("global_coloc_df : ", type(global_coloc_df))
-                print("cell_coloc_df : ", type(cell_coloc_df))
-
-
-                result_dataframe.to_excel(TEST_FOLDER_PATH + "result_dataframe.xlsx")
-                cell_result_dataframe.to_excel(TEST_FOLDER_PATH + "cell_result_dataframe.xlsx")
-
-
-            except Exception as e :
-                error = traceback.format_exc()
-                with open(TEST_FOLDER_PATH + "debug_log.txt", mode="w+") as log:
-                    log.write(error)
-                raise e
         
         new_coloc = _cell_coloc(
             acquisition_id1 = acquisition_id1,
