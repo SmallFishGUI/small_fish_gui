@@ -662,18 +662,19 @@ def launch_detection(
         spots_cluster_id = None
 
     if user_parameters['show_napari_corrector'] :
-
+        
         spots, clusters, new_cluster_radius, new_min_spot_number, nucleus_label, cell_label = correct_spots(
             image, 
             spots, 
-            user_parameters['voxel_size'],
+            voxel_size=user_parameters['voxel_size'],
             clusters=clusters,
             spot_cluster_id = spots_cluster_id,
             cluster_size= user_parameters.get('cluster_size'),
             min_spot_number= user_parameters.setdefault('min_number_of_spots', 0),
             cell_label=cell_label,
             nucleus_label=nucleus_label,
-            other_images=other_image
+            other_images=other_image,
+            segment_only_nuclei=user_parameters['segment_only_nuclei'],
             )
         
         if type(new_cluster_radius) != type(None) :

@@ -19,6 +19,7 @@ from ..utils import compute_anisotropy_coef
 def correct_spots(
         image, 
         spots, 
+        segment_only_nuclei,
         voxel_size= (1,1,1), 
         clusters= None, 
         spot_cluster_id= None, 
@@ -26,7 +27,7 @@ def correct_spots(
         min_spot_number=0, 
         cell_label= None, 
         nucleus_label= None, 
-        other_images =[]
+        other_images =[],
         ):
     """
     Open Napari viewer for user to visualize and corrects spots, clusters.
@@ -98,12 +99,32 @@ def correct_spots(
             feature_defaults= {"spot_number" : min_spot_number, "cluster_id" : -2, "end" : True} # napari features default will not work with np.nan passing -2 instead.
         )
 
-    if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : 
-        cell_label_layer = Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
-    if type(nucleus_label) != type(None) : 
+    if type(nucleus_label) != type(None) :
         nucleus_label_layer = Viewer.add_labels(nucleus_label, scale=scale, opacity= 0.2, blending= 'additive')
+        nucleus_label_layer.preserve_labels = True
+        labels_layer_list = [nucleus_label_layer]
     
+    if type(cell_label) != type(None) and not segment_only_nuclei : 
+        cell_label_layer = Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
+        cell_label_layer.preserve_labels = True
+        labels_layer_list += [cell_label_layer]
+
     #Adding widget
+    if type(nucleus_label) != type(None) : 
+        label_reseter = SegmentationReseter(labels_layer_list)
+        label_eraser = CellLabelEraser(labels_layer_list)
+        label_picker = FreeLabelPicker(labels_layer_list)
+        label_reseter = SegmentationReseter(labels_layer_list)
+        changes_applier = ChangesPropagater(labels_layer_list)
+
+        buttons_container = widgets.Container(widgets=[label_picker.widget, label_reseter.widget], labels=False, layout='horizontal')
+        changes_applier = widgets.Container(widgets=[changes_applier.widget], labels=False, layout='horizontal')
+        seg_tools_container = widgets.Container(
+            widgets = [buttons_container, changes_applier, label_eraser.widget],
+            labels=False,
+        )
+        Viewer.window.add_dock_widget(seg_tools_container, name='Segmentation', area='left')
+
     if type(clusters) != type(None) :
         initialize_all_cluster_wizards(
             single_layer=single_layer,
@@ -131,7 +152,8 @@ def correct_spots(
             widgets = [updater_container, buttons_container],
             labels=False,
         )
-        Viewer.window.add_dock_widget(tools_container, name='SmallFish', area='left')
+
+        Viewer.window.add_dock_widget(tools_container, name='Cluster', area='left', tabify=True)
 
     Viewer.show(block=False)
     napari.run()
@@ -158,8 +180,10 @@ def correct_spots(
         new_min_spot_number = None
 
     #Preparing updated segmentation masks
-    if type(cell_label) != type(None) and not np.array_equal(nucleus_label, cell_label) : 
+    if type(cell_label) != type(None) and not segment_only_nuclei : 
         new_cell_label = cell_label_layer.data
+    elif type(nucleus_label) != type(None) and segment_only_nuclei :
+        new_cell_label = nucleus_label_layer.data
     else :
         new_cell_label = cell_label
     if type(nucleus_label) != type(None) :
