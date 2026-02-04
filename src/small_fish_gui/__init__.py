@@ -37,8 +37,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-__version__ = "2.1.4"
-__wiki__ = "https://github.com/2Echoes/small_fish_gui/wiki"
+__version__ = "2.1.5"
+__wiki__ = "https://github.com/SmallFishGUI/small_fish_gui/wiki"
 
 import os, platform
 system_type = platform.system()
