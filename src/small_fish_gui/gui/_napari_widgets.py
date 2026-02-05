@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 import bigfish.detection as detection
 import bigfish.stack as stack
+import napari
 from skimage.segmentation import find_boundaries
+from skimage.morphology import erosion, dilation
 from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
 
 from napari.layers import Labels, Points, Image
@@ -200,6 +202,40 @@ class ChangesPropagater(NapariWidget) :
         new_label = layer.selected_label
         self.widget.label_number.value = new_label
         self.widget.update()
+
+class LabelsErosionDilation(NapariWidget) :
+    def __init__(self, viewer : napari.Viewer) -> None:
+        self.viewer = viewer
+        super().__init__()
+        self.erosion_widget = self.create_erosion_widget()
+
+    def _create_widget(self) :
+
+        @magicgui(call_button="Label dilatation")
+        def dilate_label() :
+            selected_layers = self.viewer.layers.selection
+            if selected_layers :
+                for layer in selected_layers :
+                    if not isinstance(layer, Labels) : continue
+                    layer.data = dilation(layer.data)
+                    layer.refresh()
+            else :
+                print("No layer selected")
+        return dilate_label
+
+    def create_erosion_widget(self) :
+        
+        @magicgui(call_button="Label erosion")
+        def create_label() :
+            selected_layers = self.viewer.layers.selection
+            if selected_layers :
+                for layer in selected_layers :
+                    if not isinstance(layer, Labels) : continue
+                    layer.data = erosion(layer.data)
+                    layer.refresh()
+            else :
+                print("No layer selected")
+        return create_label
 
 class ClusterIDSetter(ClusterWidget) :
     """

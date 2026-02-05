@@ -9,7 +9,7 @@ from magicgui import widgets
 
 from bigfish.stack import check_parameter
 from napari.layers import Image, Points
-from ._napari_widgets import CellLabelEraser, SegmentationReseter, ChangesPropagater, FreeLabelPicker
+from ._napari_widgets import CellLabelEraser, SegmentationReseter, ChangesPropagater, FreeLabelPicker, LabelsErosionDilation
 from ._napari_widgets import ClusterIDSetter, ClusterMerger, ClusterUpdater, ClusterCreator
 from ._napari_widgets import initialize_all_cluster_wizards
 from ._napari_widgets import SpotDetector, DenseRegionDeconvolver, BackgroundRemover
@@ -116,11 +116,13 @@ def correct_spots(
         label_picker = FreeLabelPicker(labels_layer_list)
         label_reseter = SegmentationReseter(labels_layer_list)
         changes_applier = ChangesPropagater(labels_layer_list)
+        dilation_erosion = LabelsErosionDilation(Viewer)
 
         buttons_container = widgets.Container(widgets=[label_picker.widget, label_reseter.widget], labels=False, layout='horizontal')
+        dilatation_erosion = widgets.Container(widgets=[dilation_erosion.widget, dilation_erosion.erosion_widget], labels=False, layout='horizontal')
         changes_applier = widgets.Container(widgets=[changes_applier.widget], labels=False, layout='horizontal')
         seg_tools_container = widgets.Container(
-            widgets = [buttons_container, changes_applier, label_eraser.widget],
+            widgets = [buttons_container, dilatation_erosion, label_eraser.widget, changes_applier],
             labels=False,
         )
         Viewer.window.add_dock_widget(seg_tools_container, name='Segmentation', area='left')
@@ -257,11 +259,13 @@ def show_segmentation(
     label_picker = FreeLabelPicker(labels_layer_list)
     label_reseter = SegmentationReseter(labels_layer_list)
     changes_applier = ChangesPropagater(labels_layer_list)
+    dilation_erosion = LabelsErosionDilation(Viewer)
 
     buttons_container = widgets.Container(widgets=[label_picker.widget, label_reseter.widget], labels=False, layout='horizontal')
+    dilatation_erosion = widgets.Container(widgets=[dilation_erosion.widget, dilation_erosion.erosion_widget], labels=False, layout='horizontal')
     changes_applier = widgets.Container(widgets=[changes_applier.widget], labels=False, layout='horizontal')
     tools_container = widgets.Container(
-        widgets = [buttons_container, changes_applier, label_eraser.widget],
+        widgets = [buttons_container, dilatation_erosion, label_eraser.widget, changes_applier],
         labels=False,
     )
     Viewer.window.add_dock_widget(tools_container, name='SmallFish', area='left')
