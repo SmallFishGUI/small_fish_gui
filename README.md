@@ -14,7 +14,7 @@ Spot detection is performed via *big-fish* a python implementation of FishQuant 
 </p>
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/SmallFishGUI/small_fish_gui/main/illustrations/interface presentation.jpg" width="500" title="Fish_signal" alt="Fish signal">
+<img src="https://raw.githubusercontent.com/SmallFishGUI/small_fish_gui/main/illustrations/interface presentation.png" width="500" title="Fish_signal" alt="Fish signal">
 </p>
 
 ***The workflow is fully explained in the [wiki](https://github.com/2Echoes/small_fish_gui/wiki) ! Make sure to check it out.***
