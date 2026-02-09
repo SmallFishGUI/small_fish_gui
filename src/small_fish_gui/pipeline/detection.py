@@ -309,13 +309,6 @@ def detect_spots(image, image_input_values: dict) :
 def launch_dense_region_deconvolution(image, spots, image_input_values: dict,) :
     """
     Performs spot decomposition
-
-    Returns
-    -------
-        spots : np.ndarray
-            Array(nb_spot, dim) (dim is either 3 or 2)
-        fov_res : dict
-            keys : spot_number, spotsSignal_median, spotsSignal_mean, spotsSignal_std, median_pixel, mean_pixel, snr_median, snr_mean, snr_std, cell_medianbackground_mean, cell_medianbackground_std, cell_meanbackground_mean, cell_meanbackground_std, cell_stdbackground_mean, cell_stdbackground_std
     """
     
     ##Initiate lists
