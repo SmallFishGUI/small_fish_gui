@@ -93,11 +93,3 @@ python -m small_fish_gui
 ```
 
 You are all set! Try it yourself or check the [get started](https://github.com/2Echoes/small_fish_gui/wiki/Get-started) section in the wiki.
-
-## Developement
-Bugs to fix :
-* Use of load button during co-localization quantification yields diffrent results than when testing from memory :
-    --> Shown results are correct and consistent with results from memory
-    --> But background (i.e cell_id = 0) is treated as a cell instead of being filtered
-    --> But cells on edges are NOT removed from quantification (they are if test is performed from memory)
-    --> But Cluster related metrics are not computed when test is performed from save
