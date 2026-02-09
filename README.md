@@ -10,7 +10,7 @@ Cell segmentation is peformed in 2D and 3D throught cellpose 4.0+(published work
 Spot detection is performed via *big-fish* a python implementation of FishQuant (published work) : https://github.com/fish-quant/big-fish.
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/SmallFishGUI/small_fish_gui/main/illustrations/workflow_presentation.svg" width="500" title="Fish_signal" alt="Fish signal">
+<img src="https://raw.githubusercontent.com/SmallFishGUI/small_fish_gui/main/illustrations/workflow_presentation.png" width="500" title="Fish_signal" alt="Fish signal">
 </p>
 
 <p align="center">
