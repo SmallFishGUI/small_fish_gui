@@ -219,8 +219,8 @@ def initiate_detection(user_parameters : pipeline_parameters, map_, shape) :
             detection_parameters['voxel_size_x'] = None
         else :
             if is_3D_stack : detection_parameters['voxel_size_z'] = user_parameters['voxel_size'][0]
-            detection_parameters['voxel_size_y'] = user_parameters.get['voxel_size'][0 + is_3D_stack]
-            detection_parameters['voxel_size_x'] = user_parameters.get['voxel_size'][1 + is_3D_stack]
+            detection_parameters['voxel_size_y'] = user_parameters['voxel_size'][0 + is_3D_stack]
+            detection_parameters['voxel_size_x'] = user_parameters['voxel_size'][1 + is_3D_stack]
 
     else :
         detection_parameters['voxel_size'] = [round(v) if isinstance(v, (float,int)) and not np.isnan(v) and not np.isinf(v) else None for v in voxel_size]
