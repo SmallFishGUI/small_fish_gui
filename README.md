@@ -79,6 +79,21 @@ Then download and install the small_fish package with :
 pip install small_fish_gui
 ```
 
+### Docker Set-up
+A docker image is also available on [Dockerhub](https://hub.docker.com/repository/docker/floric333/small_fish/general).
+
+If you can use the free version, I recommend using the docker desktop version and let it guide you. Otherwise you can install the command line version of Docker and run the following :
+
+```bash
+docker pull floric333/small_fish:latest
+docker run -it --rm \
+    --env="DISPLAY=$DISPLAY" \
+    --env="QT_X11_NO_MITSHM=1" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+    floric333/small_fish:latest
+```
+
+
 ### Setting up GPU
 As of Small Fish 2.0.1 it is **highly** recommanded to set up GPU with cellpose since its new model, CellposeSAM, is very heavy computationally even more when attempting 3D segmentation.  
 First of all, try to run small fish gpu without additional commands depending on your configuration it could work straight out of the box. If encoutering any issue try first the following :
