@@ -381,7 +381,7 @@ def _check_integrity_segmentation_parameters(
     if values["save_segmentation_visuals"] :
         if not os.path.isdir(values["seg_control_saving_path"]) :
             relaunch=True
-            sg.popup(f"{values["seg_control_saving_path"]} is not a directory.")
+            sg.popup(f"{values['seg_control_saving_path']} is not a directory.")
             values["seg_control_saving_path"] = user_parameters.get("seg_control_saving_path")
         if values["filename"] == "" :
             relaunch=True

@@ -100,21 +100,17 @@ def batch_pipeline(
                 window_print(batch_window,"Segmenting cells...")
                 im_seg = reorder_image_stack(map_, image)
                 parameters = _cast_segmentation_parameters(parameters)
+                nucleus_3D_segmentation = parameters['nucleus_radio_3D']
+                cytoplasm_3D_segmentation = parameters['cytoplasm_radio_3D']
+                parameters.setdefault('anisotropy',1),
+
                 cytoplasm_label, nucleus_label = cell_segmentation(
                     im_seg,
-                    cytoplasm_model_name= parameters['cytoplasm_model_name'],
-                    cytoplasm_diameter= parameters['cytoplasm_diameter'],
-                    nucleus_model_name= parameters['nucleus_model_name'],
-                    nucleus_diameter= parameters['nucleus_diameter'],
                     channels=[parameters['cytoplasm_channel'], parameters['nucleus_channel']],
-                    anisotropy= parameters['anisotropy'],
-                    nucleus_3D_segmentation=parameters['nucleus_segmentation_3D'],
-                    cyto_3D_segmentation= parameters['cytoplasm_segmentation_3D'],
                     do_only_nuc=parameters['segment_only_nuclei'],
-                    cytoplasm_flow_threshold=parameters['cytoplasm_flow_threshold'],
-                    nucleus_flow_threshold=parameters['cytoplasm_flow_threshold'],
-                    cytoplasm_cellprob_threshold=parameters['cytoplasm_cellprob_threshold'],
-                    nucleus_cellprob_threshold=parameters['nucleus_cellprob_threshold'],
+                    external_nucleus_image = None,
+                    nucleus_3D_segmentation=nucleus_3D_segmentation,
+                    cyto_3D_segmentation=cytoplasm_3D_segmentation,
                     **parameters
                     )
 
@@ -179,6 +175,8 @@ def batch_pipeline(
             parameters = convert_parameters_types(parameters)
             nucleus_signal = get_nucleus_signal(image, other_image, parameters)
             try : # Catch error raised if user enter a spot size too small compare to voxel size
+                parameters['show_interactive_threshold_selector'] = False #Disactivated in batch mode
+                parameters['show_napari_corrector'] = False
                 parameters, frame_result, spots, clusters, spot_cluster_id,_ = launch_detection(
                     image,
                     other_image,
@@ -233,8 +231,8 @@ def batch_pipeline(
             window_print(batch_window,"computing features...")
 
             if do_segmentation :
-                nucleus_label = nucleus_label if nucleus_label.ndim == 2 else np.max(nucleus_label,axis=0),
-                cytoplasm_label= cytoplasm_label if cytoplasm_label.ndim == 2 else np.max(cytoplasm_label, axis=0),
+                nucleus_label = nucleus_label if nucleus_label.ndim == 2 else np.max(nucleus_label,axis=0)
+                cytoplasm_label= cytoplasm_label if cytoplasm_label.ndim == 2 else np.max(cytoplasm_label, axis=0)
             else :
                 nucleus_label = None
                 cell_label = None
