@@ -98,6 +98,8 @@ docker run -it --rm \
 As of Small Fish 2.0.1 it is **highly** recommanded to set up GPU with cellpose since its new model, CellposeSAM, is very heavy computationally even more when attempting 3D segmentation.  
 First of all, try to run small fish gpu without additional commands depending on your configuration it could work straight out of the box. If encoutering any issue try first the following :
 
+**Note:** For MacOS users check first if your GPU is not already set up by launching a segmentation as the drivers might set up automatically upon installation.
+
 ```bash
 pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio
 ```
