@@ -73,6 +73,7 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             segmentation_parameters.setdefault("cytoplasm_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
             segmentation_parameters.setdefault("nucleus_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
             segmentation_parameters.setdefault("seg_control_saving_path", segmentation_parameters["working_directory"])
+            segmentation_parameters.setdefault("saving_path", segmentation_parameters["working_directory"])
 
             event, values = segmentation_prompt(
                 **segmentation_parameters
