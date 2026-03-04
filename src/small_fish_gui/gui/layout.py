@@ -366,7 +366,7 @@ def _segmentate_object_layout(
         object_key + "_radio_2D_seg" : radio_2D_seg,
         object_key + "_radio_3D_seg" : radio_3D_seg,
     }
-    if is_multichannel : event_dict[object_key + "_channel"] = channel_elmt, # For batch mode layout update
+    if is_multichannel : event_dict[object_key + "_channel"] = channel_elmt # For batch mode layout update
 
     return object_col, event_dict
     
