@@ -104,10 +104,10 @@ def correct_spots(
         nucleus_label_layer.preserve_labels = True
         labels_layer_list = [nucleus_label_layer]
     
-    if type(cell_label) != type(None) and not segment_only_nuclei : 
-        cell_label_layer = Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
-        cell_label_layer.preserve_labels = True
-        labels_layer_list += [cell_label_layer]
+        if type(cell_label) != type(None) and not segment_only_nuclei : 
+            cell_label_layer = Viewer.add_labels(cell_label, scale=scale, opacity= 0.2, blending= 'additive')
+            cell_label_layer.preserve_labels = True
+            labels_layer_list += [cell_label_layer]
 
     #Adding widget
     if type(nucleus_label) != type(None) : 
@@ -133,8 +133,8 @@ def correct_spots(
             cluster_layer=cluster_layer
         )
 
-        widget_clusterID = ClusterIDSetter(single_layer=single_layer, cluster_layer=cluster_layer)
-        widget_cluster_merge =ClusterMerger(single_layer=single_layer, cluster_layer=cluster_layer)
+        widget_clusterID = ClusterIDSetter(viewer=Viewer)
+        widget_cluster_merge =ClusterMerger(viewer=Viewer)
         widget_cluster_updater = ClusterUpdater(
             single_layer=single_layer,
             cluster_layer=cluster_layer,
@@ -142,10 +142,7 @@ def correct_spots(
             default_min_spot= min_spot_number,
             voxel_size=voxel_size
         )
-        widget_cluster_creator = ClusterCreator(
-            cluster_layer=cluster_layer,
-            single_layer=single_layer
-        )
+        widget_cluster_creator = ClusterCreator(viewer=Viewer)
 
 
         buttons_container = widgets.Container(widgets=[widget_clusterID.widget, widget_cluster_creator.widget], labels=False, layout='horizontal')

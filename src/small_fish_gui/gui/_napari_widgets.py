@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 import bigfish.detection as detection
 import bigfish.stack as stack
+
 import napari
+from napari.viewer import Viewer
+
 from skimage.segmentation import find_boundaries
 from skimage.morphology import erosion, dilation
 from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
@@ -48,9 +51,8 @@ class ClusterWidget(NapariWidget) :
     """
     Widget for clusters interaction are all init with cluster_layer and single_layer
     """
-    def __init__(self, cluster_layer : Points, single_layer : Points):
-        self.cluster_layer = cluster_layer
-        self.single_layer = single_layer
+    def __init__(self, viewer : Viewer):
+        self.viewer = viewer
         super().__init__()
 
 class ClusterWizard(ABC) :
@@ -241,8 +243,7 @@ class ClusterIDSetter(ClusterWidget) :
     """
     Allow user to set selected single spots to chosen cluster_id
     """
-    def __init__(self, single_layer : Points, cluster_layer : Points):
-        super().__init__(cluster_layer, single_layer)
+
 
     def _create_widget(self):
 
@@ -252,20 +253,23 @@ class ClusterIDSetter(ClusterWidget) :
                 cluster_id= {'min' : -1},
         )
         def set_cluster_id(cluster_id : int) :
-            if cluster_id == -1 or cluster_id in self.cluster_layer.features['cluster_id'] :
-                spots_selection = list(self.single_layer.selected_data)
-                cluster_id_in_selection = list(self.single_layer.features.loc[spots_selection,["cluster_id"]].to_numpy().flatten()) + [cluster_id]
-                self.single_layer.features.loc[spots_selection,["cluster_id"]] = cluster_id
+            cluster_layer = self.viewer.layers["foci"]
+            single_layer = self.viewer.layers["single spots"]
+
+            if cluster_id == -1 or cluster_id in cluster_layer.features['cluster_id'] :
+                spots_selection = list(single_layer.selected_data)
+                cluster_id_in_selection = list(single_layer.features.loc[spots_selection,["cluster_id"]].to_numpy().flatten()) + [cluster_id]
+                single_layer.features.loc[spots_selection,["cluster_id"]] = cluster_id
 
                 for cluster_id in np.unique(cluster_id_in_selection): # Then update number of spots in cluster
                     if cluster_id == -1 : continue
-                    new_spot_number = len(self.single_layer.features.loc[self.single_layer.features['cluster_id'] == cluster_id])
-                    self.cluster_layer.features.loc[self.cluster_layer.features['cluster_id'] == cluster_id, ["spot_number"]] = new_spot_number
-                self.cluster_layer.events.features()
+                    new_spot_number = len(single_layer.features.loc[single_layer.features['cluster_id'] == cluster_id])
+                    cluster_layer.features.loc[cluster_layer.features['cluster_id'] == cluster_id, ["spot_number"]] = new_spot_number
+                cluster_layer.events.features()
             else :
                 print(f"Not cluster with id {cluster_id} was found.")
 
-            self.cluster_layer.selected_data.clear()
+            cluster_layer.selected_data.clear()
 
         return set_cluster_id
 
@@ -273,9 +277,6 @@ class ClusterMerger(ClusterWidget) :
     """
     Merge all selected clusters by replacing cluster ids of all clusters and belonging points with min for cluster id.
     """
-    def __init__(self, cluster_layer, single_layer):
-        super().__init__(cluster_layer, single_layer)
-    
     
     def _create_widget(self):
 
@@ -283,36 +284,80 @@ class ClusterMerger(ClusterWidget) :
             call_button="Merge Clusters",
             auto_call=False
         )
-        def merge_cluster()-> None :
-            selected_clusters = list(self.cluster_layer.selected_data)
+        def merge_cluster()-> list[LayerDataTuple] :
+
+            cluster_layer : Points = self.viewer.layers["foci"]
+            single_layer = self.viewer.layers["single spots"]
+            single_features = single_layer.features
+            cluster_features = cluster_layer.features
+
+            selected_clusters = list(cluster_layer.selected_data)
             if len(selected_clusters) == 0 : return None
 
-            selected_cluster_ids = self.cluster_layer.features.loc[selected_clusters,['cluster_id']].to_numpy().flatten()
+
+            selected_cluster_ids = cluster_features.loc[selected_clusters,['cluster_id']].to_numpy().flatten()
             new_cluster_id = selected_cluster_ids.min()
 
-            #Dropping selected clusters
-            self.cluster_layer.data = np.delete(self.cluster_layer.data, selected_clusters, axis=0)
-            self.cluster_layer.features = self.cluster_layer.features.drop(selected_clusters, axis=0)
-
             #Updating spots
-            belonging_spots = self.single_layer.features.loc[self.single_layer.features['cluster_id'].isin(selected_cluster_ids)].index
-            self.single_layer.features.loc[belonging_spots, ["cluster_id"]] = new_cluster_id
+            belonging_spots = single_features.loc[single_features['cluster_id'].isin(selected_cluster_ids)].index
 
+            cluster_layer.remove_selected()
             #Creating new cluster
-            centroid = list(self.single_layer.data[belonging_spots].mean(axis=0).round().astype(int))
+            centroid = list(single_layer.data[list(belonging_spots)].mean(axis=0).round().astype(int))
             spot_number = len(belonging_spots)
-            self.cluster_layer.data = np.append(
-                self.cluster_layer.data,
+            
+            points_data = np.append(
+                cluster_layer.data,
                 [centroid],
                 axis=0
             )
 
-            last_index = len(self.cluster_layer.data) - 1
-            self.cluster_layer.features.loc[last_index, ['cluster_id']] = new_cluster_id
-            self.cluster_layer.features.loc[last_index, ['spot_number']] = spot_number
+            features = pd.concat([
+                    cluster_layer.features,
+                    pd.DataFrame({"spot_number" : spot_number, "cluster_id" : new_cluster_id, "end" : True}, index=[0])
+                ], axis=0, ignore_index=True)
 
-            self.cluster_layer.selected_data.clear()
-            self.cluster_layer.refresh()
+            cluster_layer_data = LayerDataTuple((
+                    points_data,
+                    {
+                        "name" : "foci",
+                        "scale" : tuple(cluster_layer.scale),
+                        "size" : max(cluster_layer.size),
+                        "opacity" : cluster_layer.opacity,
+                        "face_color" : list(cluster_layer.face_color) + ["white"],
+                        "symbol" : "diamond",
+                        "features" : {
+                            "spot_number" : features["spot_number"].to_list(), 
+                            "cluster_id" : features["cluster_id"].to_list(),
+                            "end" : features["end"].to_list()
+                        },
+                        "feature_defaults" : {"spot_number" : 1, "cluster_id" : -2, "end" : True}
+
+                    },"Points"
+                ))
+
+            #Updating spots
+            single_features.loc[belonging_spots, ["cluster_id"]] = new_cluster_id
+            single_layer_data = LayerDataTuple((
+                    single_layer.data,
+                    {
+                        "name" : "single spots",
+                        "scale" : tuple(single_layer.scale),
+                        "size" : max(single_layer.size),
+                        "opacity" : single_layer.opacity,
+                        "face_color" : single_layer.face_color,
+                        "border_color" : single_layer.border_color,
+                        "symbol" : "disc",
+                        "features" : {
+                            "cluster_id" : single_features["cluster_id"],
+                            "end" : single_features["end"]
+                        }
+                    },"Points"
+                ))
+
+                
+            cluster_layer.refresh()
+            return [cluster_layer_data, single_layer_data]
 
         return merge_cluster
 
@@ -409,41 +454,84 @@ class ClusterCreator(ClusterWidget) :
     """
     Create a cluster containing all and only selected spots located at the centroid of selected points.
     """
-    def __init__(self, cluster_layer, single_layer):
-        super().__init__(cluster_layer, single_layer)
-
     def _create_widget(self):
 
         @magicgui(
                 call_button= "Create Cluster",
                 auto_call=False
         )
-        def create_foci() -> None :
-            selected_spots_idx = pd.Index(list(self.single_layer.selected_data))
-            free_spots_idx : pd.Index = self.single_layer.features.loc[self.single_layer.features['cluster_id'] == -1].index
+        def create_foci() -> list[LayerDataTuple] :
+            single_layer : Points = self.viewer.layers["single spots"]
+            cluster_layer = self.viewer.layers["foci"]
+
+            selected_spots_idx = pd.Index(list(single_layer.selected_data))
+            free_spots_idx : pd.Index = single_layer.features.loc[single_layer.features['cluster_id'] == -1].index
             selected_spots_idx = selected_spots_idx[selected_spots_idx.isin(free_spots_idx)]
 
             spot_number = len(selected_spots_idx)
             if spot_number == 0 :
-                print("To create a cluster please select at least 1 spot")
+                print("To create a cluster please select at least 1 spot, maybe selected spots are already in cluster ? Use the Id set tool.")
             else :
                 
                 #Foci creation
-                spots_coordinates = self.single_layer.data[selected_spots_idx]
-                new_cluster_id = self.cluster_layer.features['cluster_id'].max() + 1
+                spots_coordinates = single_layer.data[selected_spots_idx]
+                new_cluster_id = cluster_layer.features['cluster_id'].max() + 1
                 centroid = list(spots_coordinates.mean(axis=0).round().astype(int))
 
-                self.cluster_layer.data = np.concatenate([
-                    self.cluster_layer.data,
+
+                points_data = np.concatenate([
+                    cluster_layer.data,
                     [centroid]
                 ], axis=0)
+                cluster_layer.refresh()
+
+                features = pd.concat([
+                    cluster_layer.features,
+                    pd.DataFrame({"spot_number" : spot_number, "cluster_id" : new_cluster_id, "end" : True}, index=[0])
+                ], axis=0, ignore_index=True)
                 
-                last_index = len(self.cluster_layer.data) - 1
-                self.cluster_layer.features.loc[last_index, ['cluster_id']] = new_cluster_id
-                self.cluster_layer.features.loc[last_index, ['spot_number']] = spot_number
+
+                cluster_layer_data = LayerDataTuple((
+                    points_data,
+                    {
+                        "name" : "foci",
+                        "scale" : tuple(cluster_layer.scale),
+                        "size" : max(cluster_layer.size),
+                        "opacity" : cluster_layer.opacity,
+                        "face_color" : list(cluster_layer.face_color) + ["white"],
+                        "symbol" : "diamond",
+                        "features" : {
+                            "spot_number" : features["spot_number"].to_list(), 
+                            "cluster_id" : features["cluster_id"].to_list(),
+                            "end" : features["end"].to_list()
+                        },
+                        "feature_defaults" : {"spot_number" : 1, "cluster_id" : -2, "end" : True}
+
+                    },"Points"
+                ))
 
                 #Update spots cluster_id
-                self.single_layer.features.loc[selected_spots_idx,["cluster_id"]] = new_cluster_id
+                single_features = single_layer.features
+                single_features.loc[selected_spots_idx,["cluster_id"]] = new_cluster_id
+                single_layer_data = LayerDataTuple((
+                    single_layer.data,
+                    {
+                        "name" : "single spots",
+                        "scale" : tuple(single_layer.scale),
+                        "size" : max(single_layer.size),
+                        "opacity" : single_layer.opacity,
+                        "face_color" : single_layer.face_color,
+                        "border_color" : single_layer.border_color,
+                        "symbol" : "disc",
+                        "features" : {
+                            "cluster_id" : single_features["cluster_id"],
+                            "end" : single_features["end"]
+                        }
+                    },"Points"
+                ))
+
+                
+                return [cluster_layer_data, single_layer_data]
         
         return create_foci
 
@@ -502,8 +590,6 @@ class ClusterAdditionDisabler(ClusterWizard) :
     Remove the action when user uses points addition tool for Foci, forcing him to use the FociCreator tool to add new cluster.
     """
 
-    def __init__(self, single_layer, cluster_layer):
-        super().__init__(single_layer, cluster_layer)
     
     def start_listening(self):
 
@@ -528,12 +614,9 @@ class SingleEraser(ClusterWizard) :
             selected_single_idx = list(self.single_layer.selected_data)
             modified_cluster_ids = self.single_layer.features.loc[selected_single_idx, ["cluster_id"]].to_numpy().flatten()
 
-            print(np.unique(modified_cluster_ids, return_counts=True))
             for cluster_id, count in zip(*np.unique(modified_cluster_ids, return_counts=True)): # Then update number of spots in cluster
                     if cluster_id == -1 : continue
                     new_spot_number = len(self.single_layer.features.loc[self.single_layer.features['cluster_id'] == cluster_id]) - count #minus number of spot with this cluster id we remove
-                    print("new spot number : ", new_spot_number)
-                    print('target cluster id : ', cluster_id)
                     self.cluster_layer.features.loc[self.cluster_layer.features['cluster_id'] == cluster_id, ["spot_number"]] = new_spot_number
             self._origin_remove_single()
             self.cluster_layer.events.features()
