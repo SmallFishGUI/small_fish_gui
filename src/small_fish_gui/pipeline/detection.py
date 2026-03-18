@@ -277,7 +277,6 @@ def detect_spots(image, image_input_values: dict) :
     spot_size = image_input_values.get('spot_size')
     log_kernel_size = image_input_values.get('log_kernel_size')
     minimum_distance = image_input_values.get('minimum_distance')
-    threshold_user_selection = image_input_values['show_interactive_threshold_selector']
     
     if type(threshold) == type(None) :     
         threshold = threshold_penalty * compute_auto_threshold(image, voxel_size=voxel_size, spot_radius=spot_size, log_kernel_size=log_kernel_size, minimum_distance=minimum_distance)
@@ -319,7 +318,6 @@ def launch_dense_region_deconvolution(image, spots, image_input_values: dict,) :
     beta = image_input_values.get('beta')
     gamma = image_input_values.get('gamma')
     deconvolution_kernel = image_input_values.get('deconvolution_kernel')
-    dim = image_input_values['dim']
         
     spots, dense_regions, ref_spot = detection.decompose_dense(
         image=image, 
@@ -379,7 +377,7 @@ def _compute_cell_snr(image: np.ndarray, bbox, spots, voxel_size, spot_size) :
         return res
 
     if len(spots[0]) == 3 :
-        Z,Y,X = zip(*spots)
+        _,Y,X = zip(*spots)
         spots = np.array(
             list(zip(Y,X)),
             dtype= int
@@ -462,9 +460,13 @@ def launch_cell_extraction(
     #Nucleus features : area is computed in bigfish
     features_names += ['nucleus_mean_signal', 'nucleus_median_signal', 'nucleus_max_signal', 'nucleus_min_signal']
     features_names += ['snr_mean', 'snr_median', 'snr_std']
-    features_names += ['cell_center_coord','foci_number','foci_in_nuc_number']
-    features_names += ['rna_coords','cluster_coords', 'clustered_spots_coords', 'free_spots_coords']
-    features_names += ['clustered_spot_number', 'free_spot_number']
+    features_names += ['cell_center_coord']
+    if do_clustering :
+        features_names += ['foci_number','foci_in_nuc_number']
+    features_names += ['rna_coords']
+    if do_clustering :
+        features_names += ['cluster_coords', 'clustered_spots_coords', 'free_spots_coords']
+        features_names += ['clustered_spot_number', 'free_spot_number']
 
     result_frame = pd.DataFrame()
 
@@ -550,12 +552,16 @@ def launch_cell_extraction(
         features = list(features)
         features += [np.mean(nuc_signal), np.median(nuc_signal), np.max(nuc_signal), np.min(nuc_signal)]
         features += [snr_mean, snr_median, snr_std]
-        features += [cell_center, foci_number, foci_in_nuc_number]
+        features += [cell_center]
+        if not foci_coords is None :
+            features += [foci_number, foci_in_nuc_number]
 
         features = [acquisition_id, cell_id, cell_bbox] + features
-        features += [rna_coords, foci_coords, clustered_spots_coords, free_spots_coords]
-        features += [len(clustered_spots_coords) if type(clustered_spots_coords) != type(None) else None]
-        features += [len(free_spots_coords) if type(free_spots_coords) != type(None) else None]
+        features += [rna_coords]
+        if not foci_coords is None :
+            features += [foci_coords, clustered_spots_coords, free_spots_coords]
+            features += [len(clustered_spots_coords)]
+            features += [len(free_spots_coords)]
         
         result_frame = pd.concat([
             result_frame,
@@ -685,6 +691,8 @@ def launch_detection(
     
     return user_parameters, fov_result, spots, clusters, spots_cluster_id, image
             
+class NoCellInFrameError(Exception) :
+    pass
 
 def launch_features_computation(
         acquisition_id, 
@@ -700,7 +708,7 @@ def launch_features_computation(
         ) :
 
     dim = image.ndim
-    if user_parameters['do_cluster_computation'] : 
+    if user_parameters['do_cluster_computation'] and not clusters is None: 
         frame_results['cluster_number'] = len(clusters)
         if dim == 3 :
             frame_results['total_spots_in_clusters'] = clusters.sum(axis=0)[3] if len(clusters) >0 else  0
@@ -723,7 +731,7 @@ def launch_features_computation(
             )
 
         except IndexError as e: #User loaded a segmentation and no cells can be extracted out of it.
-            raise Exception("No cell was fit for quantification in segmentation. This can happen if you loaded empty segmentation or there is a missmatch between cytoplasm and nuclei.\nIf you didn't load segmentation please report the issue as this should not happen.")
+            raise NoCellInFrameError("No cell was fit for quantification in segmentation. This can happen if you loaded empty segmentation or there is a missmatch between cytoplasm and nuclei.\nIf you didn't load segmentation please report the issue as this should not happen.") from e
 
     else :
         cell_result_dframe = pd.DataFrame()
@@ -734,7 +742,7 @@ def launch_features_computation(
     else : 
         frame_results['cell_number'] = nan
     frame_results['spots'] = spots
-    frame_results['clusters'] = clusters
+    if not clusters is None : frame_results['clusters'] = clusters
     frame_results['spots_cluster_id'] = spots_cluster_id
     frame_results.update(user_parameters)
     frame_results['threshold'] = user_parameters['threshold']

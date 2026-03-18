@@ -51,9 +51,9 @@ def _spot_count_map(spots_array, radius_px, voxel_size) :
     """
 
     kernel = _create_counting_kernel(radius_px, voxel_size)
-    map = fftconvolve(spots_array, kernel, mode= 'same')
+    _map = fftconvolve(spots_array, kernel, mode= 'same')
 
-    return np.round(map).astype(int)
+    return np.round(_map).astype(int)
 
 def _reconstruct_spot_signal(image_shape, spot_list: list, dim=3):
     """
@@ -112,9 +112,11 @@ def spots_multicolocalisation(spots_list, anchor_list, radius_nm, image_shape, v
         Z,Y,X = list(zip(*spots_list))
         res = list(count_map[Z,Y,X])
 
-    if dim == 2 :
+    elif dim == 2 :
         Y,X = list(zip(*spots_list))
         res = list(count_map[Y,X])
+    else :
+        raise AssertionError(f"Unforseen dimension {dim}")
 
     return res
 
@@ -340,8 +342,31 @@ def _cell_coloc(
     
     acquisition1 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id1]
     acquisition2 = result_dataframe.loc[result_dataframe['acquisition_id'] == acquisition_id2]
-    has_clusters_1 = "clustered_spots_coords" in acquisition1.columns or "clusters" in acquisition1.columns
-    has_clusters_2 = "clustered_spots_coords" in acquisition2.columns or "clusters" in acquisition2.columns
+
+    if "clustered_spots_coords" in acquisition1.columns :
+        CLUSTER_KEY1 = "clustered_spots_coords"
+        clusters = acquisition1[CLUSTER_KEY1].iat[0]
+    elif "clusters" in acquisition1.columns :
+        CLUSTER_KEY1 = "clusters"
+        clusters = acquisition1[CLUSTER_KEY1].iat[0]
+    else :
+        CLUSTER_KEY1 = None
+        clusters = None
+    has_clusters_1 = not clusters is None and not np.isnan(clusters).all() and len(clusters) > 0
+    
+    if "clustered_spots_coords" in acquisition2.columns :
+        CLUSTER_KEY2 = "clustered_spots_coords"
+        clusters = acquisition2[CLUSTER_KEY2].iat[0]
+    elif "clusters" in acquisition2.columns :
+        CLUSTER_KEY2 = "clusters"
+        clusters = acquisition2[CLUSTER_KEY2].iat[0]
+    else :
+        CLUSTER_KEY2 = None
+        clusters = None
+    has_clusters_2 = not clusters is None and not np.isnan(clusters).all() and len(clusters) > 0
+
+    print("has_clusters_1 : ", has_clusters_1)
+    print("has_clusters_2 : ", has_clusters_2)
 
     acquisition_name_id1 = acquisition1['name'].iat[0]
     acquisition_name_id2 = acquisition2['name'].iat[0]
@@ -365,18 +390,22 @@ def _cell_coloc(
 
     if has_clusters_1 or has_clusters_2 :
         target_column = "clustered_spots_coords"
-        target_mask = cell_dataframe.loc[:, target_column].apply(len) == 0
-        cell_dataframe.loc[target_mask,target_column] = pd.Series([np.empty(shape=(0,3), dtype=int)]* sum(target_mask), dtype=object)
+        target_mask = cell_dataframe[~cell_dataframe[target_column].isna()]
+        target_index = target_mask[target_mask[target_column].apply(len) == 0].index
+        cell_dataframe.loc[target_index,target_column] = pd.Series([np.empty(shape=(0,3), dtype=int)]* len(target_index), dtype=object)
     
     colocalisation_df = cell_dataframe.pivot(
         columns=['name', 'acquisition_id'],
         values= pivot_values_columns,
         index= 'cell_id'
     )
-    colocalisation_df = colocalisation_df.dropna(axis=0)
+
+    subset_spots = [("rna_coords", acquisition_name_id1, acquisition_id1), ("rna_coords", acquisition_name_id2, acquisition_id2)]
+    subset_clusters1 = [("clustered_spots_coords", acquisition_name_id1, acquisition_id1)]
+    subset_clusters2 = [("clustered_spots_coords", acquisition_name_id2, acquisition_id2)]
 
     #spots _vs spots
-    colocalisation_df[("spots_with_spots_count",coloc_name_forward,"forward")] = colocalisation_df['rna_coords'].apply(
+    colocalisation_df[("spots_with_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots)['rna_coords'].apply(
         lambda x: spots_colocalisation(
             spot_list1= x[(acquisition_name_id1,acquisition_id1)],
             spot_list2= x[(acquisition_name_id2,acquisition_id2)],
@@ -386,7 +415,7 @@ def _cell_coloc(
         )
     colocalisation_df[("spots_with_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df[("spots_with_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id1,acquisition_id1)].astype(float)
     
-    colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")] = colocalisation_df['rna_coords'].apply(
+    colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")] = colocalisation_df.dropna(axis=0, subset=subset_spots)['rna_coords'].apply(
         lambda x: spots_colocalisation(
             spot_list1= x[(acquisition_name_id2,acquisition_id2)],
             spot_list2= x[(acquisition_name_id1,acquisition_id1)],
@@ -397,24 +426,21 @@ def _cell_coloc(
     colocalisation_df[("spots_with_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id2,acquisition_id2)].astype(float)
 
     if has_clusters_2:
-        CLUSTER_KEY2 = "clustered_spots_coords" if "clustered_spots_coords" in acquisition2.columns else "clusters"
-        if len(acquisition2[CLUSTER_KEY2].iat[0]) > 0 :
-
-            #spots to clusters
-            colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.apply(
-                lambda x: spots_colocalisation(
-                    spot_list1= x[('rna_coords',acquisition_name_id1,acquisition_id1)],
-                    spot_list2= x[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)][:,:len(voxel_size)],
-                    distance=colocalisation_distance,
-                    voxel_size=voxel_size
-                    ),axis=1
-                )
-            colocalisation_df[("spots_with_clustered_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id1,acquisition_id1)].astype(float)
+        print(CLUSTER_KEY2)
+        print(colocalisation_df[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)])
+        #spots to clusters
+        colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters2).apply(
+            lambda x: spots_colocalisation(
+                spot_list1= x[('rna_coords',acquisition_name_id1,acquisition_id1)],
+                spot_list2= x[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)][:,:len(voxel_size)],
+                distance=colocalisation_distance,
+                voxel_size=voxel_size
+                ),axis=1
+            )
+        colocalisation_df[("spots_with_clustered_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id1,acquisition_id1)].astype(float)
         
     if has_clusters_1:
-        CLUSTER_KEY1 = "clustered_spots_coords" if "clustered_spots_coords" in acquisition1.columns else "clusters"
-        if len(acquisition1[CLUSTER_KEY1].iat[0]) > 0 :
-            colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.apply(
+            colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1).apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('rna_coords',acquisition_name_id2,acquisition_id2)],
                     spot_list2= x[('clustered_spots_coords',acquisition_name_id1,acquisition_id1)][:,:len(voxel_size)],
@@ -429,7 +455,7 @@ def _cell_coloc(
 
         if len(acquisition1[CLUSTER_KEY1].iat[0]) > 0 and len(acquisition2[CLUSTER_KEY2].iat[0]) > 0 :
             #clusters to clusters 
-            colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.apply(
+            colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1 + subset_clusters2).apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('clustered_spots_coords',acquisition_name_id1,acquisition_id1)][:,:len(voxel_size)],
                     spot_list2= x[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)][:,:len(voxel_size)],
@@ -437,9 +463,9 @@ def _cell_coloc(
                     voxel_size=voxel_size 
                     ),axis=1
             )
-            colocalisation_df[("clustered_spots_with_clustered_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('clustered_spot_number',acquisition_name_id1,acquisition_id1)].astype(float)
+            colocalisation_df[("clustered_spots_with_clustered_spots_fraction",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1 + subset_clusters2)[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")].astype(float) / colocalisation_df[('clustered_spot_number',acquisition_name_id1,acquisition_id1)].astype(float)
 
-            colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.apply(
+            colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1 + subset_clusters2).apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)][:,:len(voxel_size)],
                     spot_list2= x[('clustered_spots_coords',acquisition_name_id1,acquisition_id1)][:,:len(voxel_size)],
