@@ -236,7 +236,7 @@ def show_segmentation(
     #Init Napari viewer
     Viewer = napari.Viewer(ndisplay=2, title= 'Show segmentation', axis_labels=['z','y','x'] if dim == 3 else ['y', 'x'])
     
-    scale = (anisotrpy, 1, 1)
+    scale = (anisotrpy, 1, 1) if dim == 3 else (1,1)
 
     # Adding nuclei
     nuc_signal_layer = Viewer.add_image(nuc_image, name= "nucleus signal", blending= 'additive', colormap='blue', contrast_limits=[nuc_image.min(), nuc_image.max()], scale=scale)
