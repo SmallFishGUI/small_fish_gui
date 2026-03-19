@@ -365,9 +365,6 @@ def _cell_coloc(
         clusters = None
     has_clusters_2 = not clusters is None and not np.isnan(clusters).all() and len(clusters) > 0
 
-    print("has_clusters_1 : ", has_clusters_1)
-    print("has_clusters_2 : ", has_clusters_2)
-
     acquisition_name_id1 = acquisition1['name'].iat[0]
     acquisition_name_id2 = acquisition2['name'].iat[0]
     result_dataframe = result_dataframe.set_index('acquisition_id', drop=False)
@@ -426,8 +423,6 @@ def _cell_coloc(
     colocalisation_df[("spots_with_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id2,acquisition_id2)].astype(float)
 
     if has_clusters_2:
-        print(CLUSTER_KEY2)
-        print(colocalisation_df[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)])
         #spots to clusters
         colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters2).apply(
             lambda x: spots_colocalisation(
