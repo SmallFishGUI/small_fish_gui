@@ -218,7 +218,7 @@ def batch_promp(
         [sanity_header, sanity_check_button, sanity_progress],
         [dimension_number_text],
         [tab_col, sg.Push(), launch_col, sg.Push()],
-        # [stream_output],
+        [stream_output],
     ]
 
     window = sg.Window("small fish", layout=layout, size= (800,800), auto_size_buttons=True, auto_size_text=True, resizable=True)
