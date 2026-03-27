@@ -432,9 +432,9 @@ def launch_cell_extraction(
     if nucleus_signal.ndim == 3 :
         nucleus_signal = stack.maximum_projection(nucleus_signal)
     if cell_label.ndim == 3 :
-        cell_label = stack.maximum_projection(nucleus_signal)
+        cell_label = stack.maximum_projection(cell_label)
     if nucleus_label.ndim == 3 :
-        nucleus_label = stack.maximum_projection(nucleus_signal)
+        nucleus_label = stack.maximum_projection(nucleus_label)
 
     cells_results = multistack.extract_cell(
         cell_label=cell_label,
@@ -689,7 +689,7 @@ def launch_detection(
     post_detection_dict = launch_post_detection(image, spots, user_parameters, hide_loading = hide_loading)
     fov_result.update(post_detection_dict)
     
-    return user_parameters, fov_result, spots, clusters, spots_cluster_id, image
+    return user_parameters, fov_result, spots, clusters, spots_cluster_id, image, nucleus_label, cell_label
             
 class NoCellInFrameError(Exception) :
     pass

@@ -121,13 +121,21 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
             if not batch_mode : window.close()
 
         if segmentation_parameters["show_segmentation"] :
-            
+            if is_multichannel :
+                if segmentation_parameters["segment_only_nuclei"] :
+                    other_image = np.delete(image, [segmentation_parameters["nucleus_channel"]], axis=0)
+                else :
+                    other_image = np.delete(image, [segmentation_parameters["cytoplasm_channel"], segmentation_parameters["nucleus_channel"]], axis=0)
+            else :
+                other_image = None
+                
             nucleus_label, cytoplasm_label = napari_show_segmentation(
                 nuc_image=image[segmentation_parameters["nucleus_channel"]] if type(segmentation_parameters["other_nucleus_image"]) == type(None) else segmentation_parameters["other_nucleus_image"],
                 nuc_label= nucleus_label,
                 cyto_image=image[segmentation_parameters["cytoplasm_channel"]],
                 cyto_label=cytoplasm_label,
                 anisotrpy=segmentation_parameters["anisotropy"],
+                other_channels=other_image
             )
 
             if nucleus_label.ndim == 3 : nucleus_label = np.max(nucleus_label, axis=0)

@@ -42,7 +42,7 @@ while True : #Break this loop to close small_fish
         if event == 'Add detection' :
             user_parameters = clean_unused_parameters_cache(user_parameters)
 
-            new_result_df, new_cell_result_df, acquisition_id, user_parameters =  add_detection(
+            new_result_df, new_cell_result_df, acquisition_id, user_parameters, nucleus_label, cytoplasm_label =  add_detection(
                 user_parameters=user_parameters,
                 acquisition_id=acquisition_id,
                 cytoplasm_label = cytoplasm_label,

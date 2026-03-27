@@ -496,7 +496,7 @@ class ClusterCreator(ClusterWidget) :
                     {
                         "name" : "foci",
                         "scale" : tuple(cluster_layer.scale),
-                        "size" : max(cluster_layer.size),
+                        "size" : max(cluster_layer.size) if len(cluster_layer.data) != 0 else 8,
                         "opacity" : cluster_layer.opacity,
                         "face_color" : list(cluster_layer.face_color) + ["white"],
                         "symbol" : "diamond",

@@ -209,6 +209,7 @@ def show_segmentation(
         cyto_image : np.ndarray = None,
         cyto_label : np.ndarray = None,
         anisotrpy : float = 1,
+        other_channels : np.ndarray | None = None,
         ) :
     dim = nuc_image.ndim
     
@@ -250,6 +251,14 @@ def show_segmentation(
         cyto_label_layer = Viewer.add_labels(cyto_label, opacity= 0.6, name= 'cytoplasm_label', scale=scale)
         cyto_label_layer.preserve_labels = True
         labels_layer_list += [cyto_label_layer]
+
+    #Adding other channels
+    if other_channels is None : 
+        pass
+    
+    else :
+        for other_channel in other_channels :
+            Viewer.add_image(other_channel, blending="additive", scale=scale)
 
     #Adding widget
     label_eraser = CellLabelEraser(labels_layer_list)
