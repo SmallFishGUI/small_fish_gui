@@ -5,19 +5,17 @@ import os
 import numpy as np
 import pandas as pd
 import bigfish.detection as detection
-import bigfish.stack as stack
 
 import napari
 from napari.viewer import Viewer
 
-from skimage.segmentation import find_boundaries
 from skimage.morphology import erosion, dilation
 from ..pipeline._bigfish_wrapers import _apply_log_filter, _local_maxima_mask
 
 from napari.layers import Labels, Points, Image
-from napari.utils.events import Event, EmitterGroup
+from napari.utils.events import EmitterGroup
 from magicgui import magicgui
-from magicgui.widgets import SpinBox, Container
+from magicgui.widgets import SpinBox
 from bigfish.detection import spots_thresholding, automated_threshold_setting
 from napari.types import LayerDataTuple
 
@@ -1053,4 +1051,3 @@ class DenseRegionDeconvolver(NapariWidget) :
             "beta" : self.beta,
             "gamma" : self.gamma
         }
-

@@ -177,7 +177,7 @@ def batch_pipeline(
             try : # Catch error raised if user enter a spot size too small compare to voxel size
                 parameters['show_interactive_threshold_selector'] = False #Disactivated in batch mode
                 parameters['show_napari_corrector'] = False
-                parameters, frame_result, spots, clusters, spot_cluster_id,_ = launch_detection(
+                parameters, frame_result, spots, clusters, spot_cluster_id, *_ = launch_detection(
                     image,
                     other_image,
                     parameters,
