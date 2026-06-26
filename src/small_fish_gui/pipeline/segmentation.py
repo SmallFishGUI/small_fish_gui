@@ -68,7 +68,8 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
     #Ask user for parameters
     #if incorrect parameters --> set relaunch to True
         while True :
-            segmentation_parameters.setdefault("other_nucleus_image", "")
+            segmentation_parameters.setdefault("other_nucleus_image_path", "")
+            segmentation_parameters.setdefault("other_nucleus_image", None)
             segmentation_parameters.setdefault("cytoplasm_channel", segmentation_parameters["detection_channel"])
             segmentation_parameters.setdefault("cytoplasm_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
             segmentation_parameters.setdefault("nucleus_segmentation_3D", segmentation_parameters["do_3D_segmentation"])
@@ -88,7 +89,16 @@ def launch_segmentation(user_parameters: pipeline_parameters, nucleus_label, cyt
                     continue
 
             #Extract parameters
-            values, relaunch = _check_integrity_segmentation_parameters(values, segmentation_parameters, available_channels=available_channels, available_slices=available_slices)
+            shape = image.shape
+            dim = image.ndim
+            values, relaunch = _check_integrity_segmentation_parameters(
+                values,
+                shape,
+                dim, 
+                segmentation_parameters, 
+                available_channels=available_channels, 
+                available_slices=available_slices
+                )
             segmentation_parameters.update(values)
             if not relaunch : break
 
@@ -372,6 +382,8 @@ def _cast_segmentation_parameters(values:dict) :
 
 def _check_integrity_segmentation_parameters(
     values : pipeline_parameters, 
+    shape : tuple,
+    dim : int,
     user_parameters : pipeline_parameters, 
     available_channels : list, 
     available_slices : list
@@ -527,19 +539,19 @@ def _check_integrity_segmentation_parameters(
 
     
     #Cytoplasm parameters
-    if type(values["cytoplasm_model_name"]) != str  and not do_only_nuc:
+    if type(values["cytoplasm_model_name"]) != str  and not values["segment_only_nuclei"]:
         sg.popup('Invalid cytoplasm model name.')
         values['cytoplasm_model_name'] = user_parameters['cytoplasm_model_name']
         relaunch= True
     if is_multichannel :
-        if values["cytoplasm_channel"] not in available_channels and not do_only_nuc:
-            sg.popup('For given input image please select channel in {0}\ncytoplasm_channel : {1}'.format(available_channels, cytoplasm_channel))
+        if values["cytoplasm_channel"] not in available_channels and not values["segment_only_nuclei"]:
+            sg.popup('For given input image please select channel in {0}\ncytoplasm_channel : {1}'.format(available_channels, values["cytoplasm_channel"]))
             relaunch= True
             values['cytoplasm_channel'] = user_parameters['cytoplasm_channel']
     else :
         values["cytoplasm_channel"] = ...
 
-    if type(values["cytoplasm_diameter"]) not in [int, float] and not do_only_nuc:
+    if type(values["cytoplasm_diameter"]) not in [int, float] and not values["segment_only_nuclei"]:
         sg.popup("Incorrect cytoplasm size.")
         relaunch= True
         values['cytoplasm_diameter'] = user_parameters['cytoplasm_diameter']
@@ -552,7 +564,7 @@ def _check_integrity_segmentation_parameters(
     
     if is_multichannel :
         if values["nucleus_channel"] not in available_channels :
-            sg.popup('For given input image please select channel in {0}\nnucleus channel : {1}'.format(available_channels, nucleus_channel))
+            sg.popup('For given input image please select channel in {0}\nnucleus channel : {1}'.format(available_channels, values["nucleus_channel"]))
             relaunch= True
             values['nucleus_channel'] = user_parameters['nucleus_channel']
     else : 
@@ -563,34 +575,43 @@ def _check_integrity_segmentation_parameters(
         relaunch= True
         values['nucleus_diameter'] = user_parameters['nucleus_diameter']
 
-    if values["other_nucleus_image"] != '' :
-        if os.path.isdir(values["other_nucleus_image"]) :
+    if values["other_nucleus_image_path"] != '' :
+        if os.path.isdir(values["other_nucleus_image_path"]) :
             values['other_nucleus_image'] = None
-        elif not os.path.isfile(values["other_nucleus_image"]) :
+        elif not os.path.isfile(values["other_nucleus_image_path"]) :
             sg.popup("Nucleus image is not a file.")
             relaunch=True
             values['other_nucleus_image'] = None
         else :
             try :
-                nucleus_image = open_image(other_nucleus_image)
+                cytoplasm_channel = values["cytoplasm_channel"]
+                nucleus_image = open_image(values["other_nucleus_image_path"])
             except Exception as e :
                 sg.popup("Could not open image.\n{0}".format(e))
                 relaunch=True
-                values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+
             else :
-                if nucleus_image.ndim != image.ndim - is_multichannel :
+                if nucleus_image.ndim != dim - is_multichannel :
                     sg.popup("Nucleus image dimension missmatched. Expected same dimension as cytoplasm_image for monochannel or same dimension as cytoplasm_image -1 for is_multichannel\ncytoplasm dimension : {0}, nucleus dimension : {1}".format(image.ndim, nucleus_image.ndim))
                     nucleus_image = None
                     relaunch=True
-                    values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+                    values['other_nucleus_image'] = None
+                    values['other_nucleus_image_path'] = None
                 
-                elif nucleus_image.shape != image[cytoplasm_channel].shape :
-                    sg.popup("Nucleus image shape missmatched. Expected same shape as cytoplasm_image \ncytoplasm shape : {0}, nucleus shape : {1}".format(image[cytoplasm_channel].shape, nucleus_image.shape))
+                elif  not (nucleus_image.shape == shape and not is_multichannel) and not (nucleus_image.shape == shape[1:] and is_multichannel) :
+                    print("nucleus shape : ", nucleus_image.shape)
+                    print("shape : ", shape)
+                    print("is multichannel : ", is_multichannel)
+                    sg.popup("Nucleus image shape missmatched. Expected same shape as cytoplasm_image \ncytoplasm shape : {0}, nucleus shape : {1}".format(shape[1:] if is_multichannel else shape, nucleus_image.shape))
                     nucleus_image = None
                     relaunch=True
-                    values['other_nucleus_image'] = user_parameters['other_nucleus_image']
+                    values['other_nucleus_image'] = None
+                    values['other_nucleus_image_path'] = None
+                else :
+                    values["other_nucleus_image"] = nucleus_image
 
     else :
+        values["other_nucleus_image_path"] = None
         values["other_nucleus_image"] = None
 
     return values, relaunch

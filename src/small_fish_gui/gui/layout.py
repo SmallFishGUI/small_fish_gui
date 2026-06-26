@@ -119,8 +119,6 @@ def path_layout(keys= [],look_for_dir = False, header=None, preset=settings.work
     check_parameter(keys= list, header = (str, type(None)))
     for key in keys : check_parameter(key = str)
     
-    initial_folder = preset if preset != "" else settings.working_directory
-
     if look_for_dir : Browse = sg.FolderBrowse
     else : Browse = sg.FileBrowse
 
@@ -202,7 +200,7 @@ def _segmentation_layout(
         nucleus_model,
         cytoplasm_channel,
         nucleus_channel,
-        other_nucleus_image,
+        other_nucleus_image_path,
         cytoplasm_diameter,
         nucleus_diameter,
         show_segmentation,
@@ -250,7 +248,7 @@ def _segmentation_layout(
         segmentation_3D=nucleus_segmentation_3D,
         min_size=nucleus_min_size
     )
-    layout += path_layout(keys=["other_nucleus_image"], look_for_dir=False, preset=other_nucleus_image)
+    layout += path_layout(keys=["other_nucleus_image_path"], look_for_dir=False, preset=other_nucleus_image_path)
     layout += [[nucleus_parameters_col]]
     event_dict.update(nucleus_event_dict)
     event_dict[nucleus_key + "_column"] = nucleus_parameters_col

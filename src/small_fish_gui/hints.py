@@ -62,7 +62,8 @@ class pipeline_parameters(TypedDict) :
             nucleus_mean_proj : bool
             nucleus_select_slice : bool
             nucleus_selected_slice : int
-            other_nucleus_image : str
+            other_nucleus_image_path : str
+            other_nucleus_image : ndarray
             reordered_shape : Tuple[int,int,int,int,int]
             do_segmentation : bool
             shape : Tuple[int,int,int,int,int]
