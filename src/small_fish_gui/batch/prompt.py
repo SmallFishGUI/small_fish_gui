@@ -252,6 +252,7 @@ def batch_promp(
     get_elmt_from_key(tab_dict['Input'], key= 'image_path').update(disabled=True)
     for key in seg_keys_to_hide : get_elmt_from_key(tab_dict['Segmentation'], key=key).update(disabled=True)
     for key in detection_keys_to_hide : get_elmt_from_key(tab_dict['Detection'], key=key).update(disabled=True)
+    get_elmt_from_key(tab_dict['Detection'], key= 'spots_extraction_folder').update(value="")
     first_loop = True
 
     while True : 
