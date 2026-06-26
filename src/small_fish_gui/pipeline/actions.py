@@ -68,13 +68,13 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
     #Ask for image parameters
     new_parameters = ask_input_parameters(user_parameters, ask_for_segmentation= False) #The image is open and stored inside user_parameters
     if type(new_parameters) == type(None) : #if user clicks 'Cancel'
-        return new_results_df, new_cell_results_df, acquisition_id, user_parameters
+        return new_results_df, new_cell_results_df, acquisition_id, user_parameters, nucleus_label, cytoplasm_label
     else :
         user_parameters.update(new_parameters)
 
     map_ = map_channels(user_parameters)
     if type(map_) == type(None) : #User clicks Cancel 
-        return new_results_df, new_cell_results_df, acquisition_id, user_parameters
+        return new_results_df, new_cell_results_df, acquisition_id, user_parameters, nucleus_label, cytoplasm_label
     user_parameters['reordered_shape'] = reorder_shape(user_parameters['shape'], map_)
 
     #Detection
