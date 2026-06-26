@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "small_fish_gui"
-version = "2.2.0"
+version = "2.2.2"
 authors = [
   { name="Slimani Floric", email="floric.slimani@live.fr" },
 ]
@@ -43,3 +43,30 @@ dependencies = [
 Homepage = "https://github.com/SmallFishGUI/small_fish_gui"
 Wiki = "https://github.com/SmallFishGUI/small_fish_gui/wiki"
 Issues = "https://github.com/SmallFishGUI/small_fish_gui/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/small_fish_gui"]
+include = [
+    "logo.png",
+    "LICENSE",
+    "README.md",
+    "requirements.txt",
+]
+exclude = [
+    "src/small_fish_gui/interface/settings.json",
+    "**/__pycache__",
+    "**/*.pyc",
+]
+[tool.hatch.build.targets.sdist]
+include = [
+	"src",
+    "logo.png",
+    "LICENSE",
+    "README.md",
+    "requirements.txt",
+]
+exclude = [
+    "src/small_fish_gui/interface/settings.json",
+    "**/__pycache__",
+    "**/*.pyc",
+]
