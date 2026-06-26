@@ -91,7 +91,7 @@ def add_detection(user_parameters : pipeline_parameters, acquisition_id, cytopla
             
             cancel = ask_cancel_detection()
             if cancel : 
-                return new_results_df, new_cell_results_df, acquisition_id, user_parameters
+                return new_results_df, new_cell_results_df, acquisition_id, user_parameters, nucleus_label, cytoplasm_label
             else : continue
 
         acquisition_id += 1
