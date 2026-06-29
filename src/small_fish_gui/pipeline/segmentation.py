@@ -599,9 +599,6 @@ def _check_integrity_segmentation_parameters(
                     values['other_nucleus_image_path'] = None
                 
                 elif  not (nucleus_image.shape == shape and not is_multichannel) and not (nucleus_image.shape == shape[1:] and is_multichannel) :
-                    print("nucleus shape : ", nucleus_image.shape)
-                    print("shape : ", shape)
-                    print("is multichannel : ", is_multichannel)
                     sg.popup("Nucleus image shape missmatched. Expected same shape as cytoplasm_image \ncytoplasm shape : {0}, nucleus shape : {1}".format(shape[1:] if is_multichannel else shape, nucleus_image.shape))
                     nucleus_image = None
                     relaunch=True

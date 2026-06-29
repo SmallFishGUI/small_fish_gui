@@ -825,14 +825,12 @@ class SpotDetector(NapariWidget) :
                     self.do_update = False
                     self.widget.threshold.max = self.filtered_image.max() + 1
                 
-                print("Computing automated threshold : ...", end="", flush=True)
                 if threshold == 0 :
                     threshold = automated_threshold_setting(
                         self.filtered_image,
                         mask_local_max=self.local_maxima
                     )
                     self.widget.threshold.value = threshold
-                print("\rComputing automated threshold : done.")
 
                 spots = spots_thresholding(
                 image=self.filtered_image,
