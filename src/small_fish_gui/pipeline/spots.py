@@ -99,13 +99,9 @@ def compute_Spots(
         'cluster_id' : cluster_id,
     })
     
-    print(Spots["cell_label"].value_counts())
     if type(cell_label) != type(None) : #Filter on edge cells
         target_index = Spots.loc[Spots["cell_label"].isin(on_edge_labels)].index
         Spots.loc[target_index,["cell_label"]] = 0
-    print("after filter on edge")
-    print(Spots["cell_label"].value_counts())
-
 
     return Spots
     
@@ -123,7 +119,10 @@ def load_spots(
         raise ValueError("Table format not recognized. Please use .csv, .xlsx or .feather files.")
     
     if "coordinates" in Spots.columns :
-        pass
+        reconstructed_spots=reconstruct_spots(Spots["coordinates"])
+        Spots = Spots.drop("coordinates",axis=1)
+        Spots.loc[:,["coordinates"]] = pd.Series(index=Spots.index, data=reconstructed_spots.tolist())
+        
     elif "y" in Spots.columns and "x" in Spots.columns :
         if "z" in Spots.columns :
             pass
@@ -144,7 +143,7 @@ def reconstruct_acquisition_data(
     Aim : creating a acquisition to add to result_dataframe from loaded spots for co-localization use  
     """
     max_id = int(max_id)
-    spots = reconstruct_spots(Spots['coordinates'])
+    spots = Spots['coordinates']
     has_clusters = not Spots['cluster_id'].isna().all()
     spot_number = len(spots)
 
@@ -197,18 +196,21 @@ def reconstruct_cell_data(
         filename : str,
         ) :
     
+
+
     has_cluster = not Spots['cluster_id'].isna().all()
     if 'cell_label' in Spots.columns : Spots = Spots.loc[Spots["cell_label"] !=0]
-    coordinates = reconstruct_spots(Spots['coordinates'])
-    Spots.loc[:,['coordinates']] = pd.Series(coordinates.tolist(), dtype=object, index= Spots.index)
-
-    cell = Spots.groupby('cell_label')['coordinates'].apply(np.array).rename("rna_coords").reset_index(drop=False)
+    cell = Spots.groupby('cell_label')['coordinates'].apply(np.array).rename("rna_coords")
+    cell = Spots.groupby('cell_label').agg({
+        'coordinates' : np.array
+    })
+    cell = cell.rename(columns={"coordinates" : "rna_coords"})
     
     #Handle cells with no spots
     na_mask =cell[cell['rna_coords'].isna()].index
     cell.loc[na_mask, ['rna_coords']] = pd.Series([np.empty(shape=(0,3))]*len(na_mask), dtype= object, index=na_mask)
     cell.loc[~na_mask, "rna_coords"] = cell.loc[~na_mask, "rna_coords"].apply(list).apply(np.array)
-    
+
     cell['total_rna_number'] = cell['rna_coords'].apply(len)
     if has_cluster :
         cell['clustered_spots_coords'] = Spots[Spots['cluster_id'] !=-1].groupby('cell_label')['coordinates'].apply(np.array).rename("clustered_spots_coords")
@@ -222,6 +224,7 @@ def reconstruct_cell_data(
 
     cell['acquisition_id'] = max_id + 1
     cell['name'] = "(loaded_spots)_{}".format(filename.split('.', maxsplit=1)[0])
+    cell = cell.reset_index(drop=False)
     cell = cell.rename(columns={"cell_label": "cell_id"})
 
     return cell
