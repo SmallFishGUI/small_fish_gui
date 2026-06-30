@@ -15,16 +15,8 @@ gen1 = yielder(N)
 
 a = constructor(10)
 
-print(type(a))
-
 gen2 = a()
 gen3 = a()
-
-print('gen1 : ', list(gen1))
-print('gen2 : ', list(gen2))
-print('gen3 : ', list(gen3))
-print('gen3 : ', list(gen3))
-
 
 #Napari test
 

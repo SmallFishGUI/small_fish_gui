@@ -91,9 +91,13 @@ def compute_Spots(
         'cluster_id' : cluster_id,
     })
     
+    print(Spots["cell_label"].value_counts())
     if type(cell_label) != type(None) : #Filter on edge cells
         target_index = Spots.loc[Spots["cell_label"].isin(on_edge_labels)].index
         Spots.loc[target_index,["cell_label"]] = 0
+    print("after filter on edge")
+    print(Spots["cell_label"].value_counts())
+
 
     return Spots
     
