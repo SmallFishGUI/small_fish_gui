@@ -62,19 +62,27 @@ def compute_Spots(
     if type(cell_label) != type(None) :
 
         # Collect all labels that are on fov edge
-        on_edge_labels = np.unique(
-            np.concatenate([
-                cell_label[:,0],
-                cell_label[:,-1],
-                cell_label[0,:],
-                cell_label[-1,:],
-            ])
-        ).astype(int)
-
         if cell_label.ndim == 3 :
+            on_edge_labels = np.unique(
+                np.concatenate([
+                    cell_label[:,:,0],
+                    cell_label[:,:,-1],
+                    cell_label[:,0,:],
+                    cell_label[:,-1,:],
+                ])
+            ).astype(int)
             cell_label_list = list(cell_label[index])
-        else :    
+        else :
+            on_edge_labels = np.unique(
+                np.concatenate([
+                    cell_label[:,0],
+                    cell_label[:,-1],
+                    cell_label[0,:],
+                    cell_label[-1,:],
+                ])
+            ).astype(int)
             cell_label_list = list(cell_label[index[-2:]]) #Only plane coordinates
+
     else :
         cell_label_list = np.nan
     id_list = np.arange(len(spots))
