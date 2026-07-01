@@ -326,7 +326,7 @@ def compute_colocalisation(
                 cell_result_dataframe = pd.concat([
                     cell_result_dataframe,
                     fake_cells
-                ], axis=0)
+                ], axis=0, ignore_index=True)
 
             max_id +=1
             acquisition_id1 = fake_acquisition.iloc[0].at['acquisition_id']
@@ -363,7 +363,7 @@ def compute_colocalisation(
                 cell_result_dataframe = pd.concat([
                     cell_result_dataframe,
                     fake_cells
-                ], axis=0)
+                ], axis=0, ignore_index=True)
 
             max_id +=1
             acquisition_id2 = fake_acquisition.iloc[0].at['acquisition_id']
