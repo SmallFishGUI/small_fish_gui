@@ -80,18 +80,11 @@ pip install small_fish_gui
 ```
 
 ### Docker Set-up
-A docker image is also available on [Dockerhub](https://hub.docker.com/repository/docker/floric333/small_fish/general).
 
-If you can use the free version, I recommend using the docker desktop version and let it guide you. Otherwise you can install the command line version of Docker and run the following :
+Currently there is no docker available.
+The reason is that the application GUI dev was initiated on tkinter backend which requires a X server application to run on Windows and MacOS. This cause a need to install 3rd party application to allow the connection between the docker and the display handling on the user computer defeating the purpose of an "easy" installation using Docker. It could still be possible to create an image and a tutorial to properly make the installation if anyone finds it useful, however I would recommend switching the backend of the GUI to Qt with a major graphical update getting rid of FreeSimpleGUI.
 
-```bash
-docker pull floric333/small_fish:latest
-docker run -it --rm \
-    --env="DISPLAY=$DISPLAY" \
-    --env="QT_X11_NO_MITSHM=1" \
-    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-    floric333/small_fish:latest
-```
+*Note : I tried switching from FreeSimpleGui to FreeSimpleGuiQt but the two packages are not fully compatible yet and I didn't want to spend the time to resolve the compatibilities issues as I think time would be better spent switching directly to a Qt application.*
 
 
 ### Setting up GPU
