@@ -141,12 +141,8 @@ def spots_colocalisation(
 
     #No cluster or no spots case
     if spot_list1 is np.nan or spot_list2 is np.nan : 
-        print("returning nan because one spot_list argument is nan")
         return np.nan
     if len(spot_list1) == 0 or len(spot_list2) == 0 : 
-        print("returning nan because one spot_list argument is empty")
-        print("spot_list1 is empty : ", len(spot_list1) == 0)
-        print("spot_list2 is empty : ", len(spot_list2) == 0)
         return np.nan
     
     #Dim check
@@ -392,13 +388,10 @@ def _cell_coloc(
     cell_dataframe.loc[:,['cell_id']] = cell_dataframe['cell_id'].astype(int)
 
     if has_clusters_1 or has_clusters_2 :
-        cell_dataframe.info()
         target_column = "clustered_spots_coords"
-        print(cell_dataframe.loc[:,["cell_id", target_column, "clustered_spots_coords"]])
         target_mask = cell_dataframe[~cell_dataframe[target_column].isna()]
         target_index = target_mask[target_mask[target_column].apply(len) == 0].index
         cell_dataframe.loc[target_index,target_column] = pd.Series([np.empty(shape=(0,3), dtype=int)]* len(target_index), dtype=object)
-        print(cell_dataframe.loc[:,["cell_id", target_column, "clustered_spots_coords"]])
     
     colocalisation_df = cell_dataframe.pivot(
         columns=['name', 'acquisition_id'],
@@ -411,7 +404,6 @@ def _cell_coloc(
     subset_clusters2 = [("clustered_spots_coords", acquisition_name_id2, acquisition_id2)]
 
     #spots _vs spots
-    print("\nSPOTS VS SPOTS\n")
     colocalisation_df[("spots_with_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots)['rna_coords'].apply(
         lambda x: spots_colocalisation(
             spot_list1= x[(acquisition_name_id1,acquisition_id1)],
@@ -433,9 +425,7 @@ def _cell_coloc(
     colocalisation_df[("spots_with_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('total_rna_number',acquisition_name_id2,acquisition_id2)].astype(float)
 
     if has_clusters_2:
-        print("\nSPOTS VS CLUSTER\n")
         #spots to clusters
-        print("\nFORWARD")
         colocalisation_df[("spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters2).apply(
             lambda x: spots_colocalisation(
                 spot_list1= x[('rna_coords',acquisition_name_id1,acquisition_id1)],
@@ -445,7 +435,6 @@ def _cell_coloc(
                 ),axis=1
             )
         
-        print("\nBACKWARD")
         colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters2).apply(
             lambda x: spots_colocalisation(
                 spot_list1= x[('clustered_spots_coords',acquisition_name_id2,acquisition_id2)][:,:len(voxel_size)],
@@ -459,8 +448,6 @@ def _cell_coloc(
         colocalisation_df[("spots_with_clustered_spots_fraction",coloc_name_backward,"backward")] = colocalisation_df[("spots_with_clustered_spots_count",coloc_name_backward,"backward")].astype(float) / colocalisation_df[('clustered_spot_number',acquisition_name_id2,acquisition_id2)].astype(float)
         
     if has_clusters_1:
-            print("\nCLUSTER VS SPOTS\n")
-            print("\nFORWARD")
             colocalisation_df[("clustered_spots_with_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1).apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('clustered_spots_coords',acquisition_name_id1,acquisition_id1)][:,:len(voxel_size)],
@@ -470,7 +457,6 @@ def _cell_coloc(
                     ),axis=1
                 )
             
-            print("\nBACKWARD")
             colocalisation_df[("clustered_spots_with_spots_count",coloc_name_backward,"backward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1).apply(
                 lambda x: spots_colocalisation(
                     spot_list1= x[('rna_coords',acquisition_name_id2,acquisition_id2)],
@@ -485,7 +471,6 @@ def _cell_coloc(
 
     if has_clusters_1 and has_clusters_2:
 
-        print("\nCLUSTER VS CLUSTER\n")
         if len(acquisition1[CLUSTER_KEY1].iat[0]) > 0 and len(acquisition2[CLUSTER_KEY2].iat[0]) > 0 :
             #clusters to clusters 
             colocalisation_df[("clustered_spots_with_clustered_spots_count",coloc_name_forward,"forward")] = colocalisation_df.dropna(axis=0, subset=subset_spots + subset_clusters1 + subset_clusters2).apply(
